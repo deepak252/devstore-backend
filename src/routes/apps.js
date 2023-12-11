@@ -1,7 +1,12 @@
 const router = require('express').Router();
-const { getAllApps, getAppById } = require('../controllers/appsController');
+const { 
+  getAllApps, 
+  getAppById, 
+  createApp 
+} = require('../controllers/appsController');
 
 router.get('/', getAllApps);
 router.get('/:id', getAppById);
-
+router.post('/', createApp);
+  
 module.exports = router;

@@ -1,8 +1,27 @@
 require('dotenv').config();
 
+const {
+  NODE_ENV='development',
+  PORT=5000,
+  MONGO_URI,
+  JWT_SECRET,
+  PROJECT_ID,
+  PRIVATE_KEY_ID,
+  PRIVATE_KEY,
+  CLIENT_EMAIL,
+  CLIENT_ID,
+  CLIENT_X509_CERT_URL
+} = process.env;
+
 module.exports = {
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: process.env.PORT || 5000,
-  MONGO_URI: process.env.MONGO_URI,
-  JWT_SECRET: process.env.JWT_SECRET
+  NODE_ENV,
+  PORT,
+  MONGO_URI,
+  JWT_SECRET,
+  PROJECT_ID,
+  PRIVATE_KEY_ID,
+  PRIVATE_KEY,
+  CLIENT_EMAIL,
+  CLIENT_ID,
+  CLIENT_X509_CERT_URL
 }
