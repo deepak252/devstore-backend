@@ -1,10 +1,10 @@
-exports.successMessage=(message, data)=>({
+exports.success=(message, data)=>({
   success : true,
   message,
   data
 });
 
-exports.errorMessage = ( message) => ({
+exports.failure = ( message) => ({
   success: false,
   message
 });

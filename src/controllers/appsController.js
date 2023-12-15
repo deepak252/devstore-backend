@@ -1,6 +1,6 @@
 const { App } = require('../models');
 const { paginateQuery } = require('../utils/mongoUtil');
-const { successMessage, errorMessage } = require('../utils/responseUtil');
+const { success, failure } = require('../utils/responseUtil');
 const util = require('util')
 const ApkReader = require('adbkit-apkreader')
 
@@ -12,16 +12,16 @@ exports.getAllApps = async (req, res)=>{
     const apps = await paginateQuery(App.find(filter), pageNumber, pageSize);
     const totalResults = await App.countDocuments(filter);
    
-    res.json(successMessage(undefined,{apps, pageNumber, pageSize, totalResults}));
+    res.json(success(undefined,{apps, pageNumber, pageSize, totalResults}));
   }catch(e){
-    console.error('Error: getAllApps', e);
-    res.status(400).json(errorMessage(e.message || e));
+    console.error('Error:getAllApps, ', e);
+    res.status(400).json(failure(e.message || e));
   }
 }
 
 exports.getAppById = async (req, res)=>{
   try{
-    res.json(successMessage('Success'));
+    res.json(success('Success'));
   }catch(e){
     console.error('Error: getAppById');
   }
@@ -45,9 +45,9 @@ exports.createApp = async (req, res)=>{
     //   throw error;
     // }
     // app = await app.save()
-    res.json(successMessage('App created successfully', {app}));
+    res.json(success('App created successfully', {app}));
   }catch(e){
     console.error('Error: createApp, ', e);
-    res.status(400).json(errorMessage(e.message || e));
+    res.status(400).json(failure(e.message || e));
   }
 }
