@@ -1,7 +1,7 @@
-const { User } = require("../models");
-const Logger = require("../utils/logger");
-const { isMongoId } = require("../utils/mongoUtil");
-const { success, failure } = require("../utils/responseUtil");
+const { User } = require('../models');
+const Logger = require('../utils/logger');
+const { isMongoId } = require('../utils/mongoUtil');
+const { success, failure } = require('../utils/responseUtil');
 
 const logger = new Logger('UserController');
 
@@ -12,38 +12,41 @@ exports.getUser = async (req, res) => {
   try {
     const { _id: userId } = req.user;
     if (!userId) {
-      throw new Error("userId is required");
+      throw new Error('userId is required');
     }
     if (!isMongoId(userId)) {
-      throw new Error("Invalid userId");
+      throw new Error('Invalid userId');
     }
     let result = await User.findById(userId);
     if (!result) {
-      throw new Error("User does not exist");
+      throw new Error('User does not exist');
     }
-    return res.json(success(undefined, result ));
+    return res.json(success(undefined, result));
   } catch (e) {
-    logger.error(e,'getUser');
+    logger.error(e, 'getUser');
     return res.status(400).json(failure(e.message || e));
   }
 };
 
-exports.getUserById = async (req, res) => {
+exports.getUserByUsername = async (req, res) => {
   try {
-    const { userId } = req.params;
-    if (!userId) {
-      throw new Error("userId is required");
+    const { username } = req.params;
+    if (!username?.trim()?.length) {
+      throw new Error("username can't be empty");
     }
-    if (!isMongoId(userId)) {
-      throw new Error("Invalid userId");
-    }
-    let result = await User.findById(userId);
+    const exclude =
+      username !== req.user?.username
+        ? '-favoriteApps -favoriteGames -favoriteWebsites'
+        : '';
+    let result = await User.findByUsername(username).select(
+      `-password ${exclude}`
+    );
     if (!result) {
-      throw new Error("User does not exist");
+      throw new Error('User does not exist');
     }
-    return res.json(success(undefined, result ));
+    return res.json(success(undefined, result));
   } catch (e) {
-    logger.error(e,'getUserById');
+    logger.error(e, 'getUserByUsername');
     return res.status(400).json(failure(e.message || e));
   }
 };
@@ -53,10 +56,10 @@ exports.updateUser = async (req, res) => {
     const { id, name, email, phone } = req.body;
     const { _id: userId } = req.user;
     if (!userId) {
-      throw new Error("userId is required");
+      throw new Error('userId is required');
     }
     if (!isMongoId(userId)) {
-      throw new Error("Invalid userId");
+      throw new Error('Invalid userId');
     }
     let result = await User.findByIdAndUpdate(
       userId,
@@ -69,11 +72,11 @@ exports.updateUser = async (req, res) => {
     );
 
     if (!result) {
-      throw new Error("User does not exist");
+      throw new Error('User does not exist');
     }
-    return res.json(success("User updated successfully", result));
+    return res.json(success('User updated successfully', result));
   } catch (e) {
-    logger.error(e,'updateUser');
+    logger.error(e, 'updateUser');
     return res.json(failure(e.message || e));
   }
 };
@@ -82,20 +85,37 @@ exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
     if (!userId) {
-      throw new Error("userId is required");
+      throw new Error('userId is required');
     }
     if (!isMongoId(userId)) {
-      throw new Error("Invalid userId");
+      throw new Error('Invalid userId');
     }
 
     let result = await User.findByIdAndDelete(userId);
     if (!result) {
-      throw new Error("User does not exist");
+      throw new Error('User does not exist');
     }
 
-    return res.json(success( "User deleted successfully", result));
+    return res.json(success('User deleted successfully', result));
   } catch (e) {
-    logger.error(e,'deleteUser');
+    logger.error(e, 'deleteUser');
     return res.json(failure(e.message || e));
+  }
+};
+
+exports.checkUsernameAvailable = async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) {
+      throw new Error('Username is required');
+    }
+    const result = await User.findByUsername(username);
+    if (result) {
+      throw new Error('Username is not available');
+    }
+    return res.json(success('Username is available'));
+  } catch (e) {
+    logger.error(e, 'checkUsernameAvailable');
+    return res.status(400).json(failure(e.message || e));
   }
 };

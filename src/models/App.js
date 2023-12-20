@@ -12,7 +12,6 @@ const appSchema = mongoose.Schema({
   icon: {
     type: String,
     trim : true,
-    required: [true, 'App icon is required'],
     match: [REGEX.URL, 'Invalid icon URL']
   },
   images: [
@@ -33,16 +32,57 @@ const appSchema = mongoose.Schema({
       trim : true
     }
   ],
+  isIOS: {
+    type: Boolean,
+    default: false
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Owner ID is required']
+  },
   downloadUrl: {
     type: String,
     trim : true,
     match: [REGEX.URL, 'Invalid download URL']
   },
-  githubUrl: {
+  totalDownloads: {
+    type: Number,
+    default: 0
+  },
+  sourceCode: {
     type: String,
     trim : true,
-    match: [REGEX.URL, 'Invalid github URL']
+    match: [REGEX.URL, 'Invalid source code URL']
   },
+  isSourceCodePublic: {
+    type: Boolean,
+    default: true
+  },
+  // appInfo: {
+  //   type: Boolean,
+  //   default: true
+  // },
+  isPrivate: {
+    type: Boolean,
+    default: false
+  },
+  // comments: [
+  //   {
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: 'User',
+  //   },
+  // ],
+  likes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
+  lastUpdated: {
+    type: Date,
+    default: Date.now
+  }
 },{
   timestamps: true
 });
