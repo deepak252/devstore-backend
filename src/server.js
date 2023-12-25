@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const {PORT} = require('./config');
 const { connectToDB } = require('./config/db');
-const admin = require('./config/firebase');
 const { success } = require('./utils/responseUtil');
 const app = express();
 

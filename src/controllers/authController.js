@@ -1,8 +1,9 @@
 const { User } = require('../models');
-const { failure, success } = require('../utils/responseUtil');
+const { failure, success, handleError } = require('../utils/responseUtil');
 const { getJwtToken, getHashedPassword } = require('../utils/authUtil');
 const { REGEX } = require('../config/constants');
 const Logger = require('../utils/logger');
+const { BadRequestError } = require('../utils/errors');
 
 const logger = new Logger('AuthController');
 
@@ -16,10 +17,10 @@ exports.signUp = async (req, res) => {
     });
     let error = user.validateSync();
     if (error) {
-      throw error;
+      throw new BadRequestError(error.message);
     }
     if (password.length < 4) {
-      throw new Error('Password must contain at least 4 characters');
+      throw new BadRequestError('Password must contain at least 4 characters');
     }
     user.password = await getHashedPassword(password);
     user = await user.save();
@@ -33,7 +34,7 @@ exports.signUp = async (req, res) => {
         .status(400)
         .json(failure('User already exists with given email / username'));
     }
-    return res.status(400).json(failure(e.message || e));
+    return handleError(e, res);
   }
 };
 
@@ -41,17 +42,17 @@ exports.signIn = async (req, res) => {
   try {
     let { usernameOrEmail, password } = req.body;
     if (!usernameOrEmail || !password) {
-      throw new Error('Username/Email and Password are required');
+      throw new BadRequestError('Username/Email and Password are required');
     }
     const user = await User.findByUsernameOrEmail(usernameOrEmail);
     if (!user || !(await user.comparePassword(password))) {
-      throw new Error('Invalid username/email or password');
+      throw new BadRequestError('Invalid username/email or password');
     }
     const token = getJwtToken(user);
     return res.json(success('Sign in successful', { user, token }));
   } catch (e) {
     logger.error(e, 'signIn');
-    return res.status(400).json(failure(e.message || e));
+    return handleError(e, res);
   }
 };
 
@@ -59,19 +60,19 @@ exports.resetPassword = async (req, res) => {
   try {
     let { email, newPassword } = req.body;
     if (!email || !newPassword) {
-      throw new Error('Email and new password are required');
+      throw new BadRequestError('Email and new password are required');
     }
     email = email.toLowerCase().trim();
     if (!REGEX.EMAIL.test(email)) {
-      throw new Error('Invalid Email');
+      throw new BadRequestError('Invalid Email');
     }
     if (newPassword.length < 4) {
-      throw new Error('Password must contain at least 4 characters');
+      throw new BadRequestError('Password must contain at least 4 characters');
     }
 
     let user = await User.findOne({ email });
     if (!user) {
-      throw new Error('User does not exist');
+      throw new BadRequestError('User does not exist');
     }
     user.password = await getHashedPassword(newPassword);
     user = await user.save();
@@ -79,6 +80,6 @@ exports.resetPassword = async (req, res) => {
     return res.json(success('Password reset successful'));
   } catch (e) {
     logger.error(e, 'resetPassword');
-    return res.status(400).json(failure(e.message || e));
+    return handleError(e, res);
   }
 };

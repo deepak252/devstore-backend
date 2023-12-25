@@ -1,7 +1,8 @@
 const { Metadata } = require('../models');
+const { BadRequestError } = require('../utils/errors');
 const Logger = require('../utils/logger');
 const { isMongoId } = require('../utils/mongoUtil');
-const { success, failure } = require('../utils/responseUtil');
+const { success, handleError } = require('../utils/responseUtil');
 
 const logger = new Logger('MetadataController');
 
@@ -12,8 +13,8 @@ exports.getMetadata = async (req, res) => {
     );
     res.json(success(undefined, result));
   } catch (e) {
-    console.error('Error:getMetadata, ', e);
-    res.status(400).json(failure(e.message || e));
+    logger.error(e, 'getMetadata');
+    return handleError(e, res);
   }
 };
 
@@ -27,13 +28,13 @@ exports.createMetadata = async (req, res) => {
     });
     const error = metadata.validateSync();
     if (error) {
-      throw error;
+      throw new BadRequestError(error.message);
     }
     metadata = await metadata.save();
     res.json(success('Metadata created successfully', metadata));
   } catch (e) {
-    console.error('Error: createMetadata, ', e);
-    res.status(400).json(failure(e.message || e));
+    logger.error(e, 'createMetadata');
+    return handleError(e, res);
   }
 };
 
@@ -41,13 +42,12 @@ exports.deleteMetadata = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isMongoId(id)) {
-      throw new Error('Invalid metadata Id');
+      throw new BadRequestError('Invalid metadata Id');
     }
-
     let result = await Metadata.findByIdAndDelete(id);
     return res.json(success('Metadata deleted successfully', result));
   } catch (e) {
     logger.error(e, 'deleteMetadata');
-    return res.json(failure(e.message || e));
+    return handleError(e, res);
   }
 };
