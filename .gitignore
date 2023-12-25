@@ -27,3 +27,7 @@ yarn-debug.log*
 yarn-error.log*
 
 test.js
+*.apk
+
+.vscode
+backup/
