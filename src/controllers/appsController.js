@@ -15,18 +15,33 @@ const {
   getIpaInfo,
   removeFiles,
 } = require('../utils/fileUtil');
-const { uploadFileToStorage } = require('../helper/firebaseStorage');
+const {
+  uploadFileToStorage,
+  deleteFilesFromStorage,
+} = require('../helper/firebaseStorage');
 const UploadApp = require('../models/UploadApp');
 const { deleteUserUploadedAppsFromBin } = require('../helper/appsHelper');
 const { BadRequestError } = require('../utils/errors');
-const { SELECTED_FIELDS, POPULATE_USER } = require('../config/queryFilters');
+const { SELECTED_FIELDS, POPULATE_OWNER } = require('../config/queryFilters');
+const { PLATFORM } = require('../config/constants');
 
 const logger = new Logger('AppsController');
 
 exports.getApps = async (req, res) => {
   try {
-    const { pageSize = 10, pageNumber = 1 } = req.query;
-    const filter = { $or: [{ isPrivate: false }, { owner: req?.user?._id }] };
+    const { pageSize = 10, pageNumber = 1, searchQuery = '' } = req.query;
+    let { platform, categories } = req.body;
+    let reqFilter = {};
+    if (Object.values(PLATFORM).includes(platform)) {
+      reqFilter = { platform };
+    }
+    let filter = {
+      $and: [
+        reqFilter,
+        { $or: [{ isPrivate: false }, { owner: req?.user?._id }] },
+        { name: { $regex: searchQuery.trim(), $options: 'i' } },
+      ],
+    };
     const apps = await paginateQuery(
       App.find(filter).select(SELECTED_FIELDS),
       pageNumber,
@@ -47,7 +62,7 @@ exports.getAppById = async (req, res) => {
     if (!isMongoId(appId)) {
       throw new BadRequestError('Invalid app ID');
     }
-    let result = await App.findById(appId).populate(POPULATE_USER).lean();
+    let result = await App.findById(appId).populate(POPULATE_OWNER).lean();
     if (!result) {
       throw new BadRequestError('App not found');
     }
@@ -67,10 +82,11 @@ exports.getAppById = async (req, res) => {
 };
 
 exports.createApp = async (req, res) => {
-  let iconLocalPath, videoLocalPath, imagesLocalPaths;
+  let iconLocalPath, videoLocalPath, imagesLocalPaths, graphicLocalpath;
   let iconRemotePath,
     videoRemotePath,
-    imagesRemotePaths = [];
+    imagesRemotePaths = [],
+    graphicRemotePath;
   try {
     const {
       body: { data } = {},
@@ -78,6 +94,7 @@ exports.createApp = async (req, res) => {
       files: {
         attachmentIcon: [attachmentIcon] = [],
         attachmentVideo: [attachmentVideo] = [],
+        attachmentGraphic: [attachmentGraphic] = [],
         attachmentImages,
       } = {},
     } = req;
@@ -113,14 +130,16 @@ exports.createApp = async (req, res) => {
     if (!uploadedApp) {
       throw new BadRequestError('Application file not found. Please try again');
     }
-    const { file, apkInfo, ipaInfo, isIos } = uploadedApp;
+    const { file, apkInfo, ipaInfo, platform } = uploadedApp;
 
     iconLocalPath = attachmentIcon?.path;
     videoLocalPath = attachmentVideo?.path;
+    graphicLocalpath = attachmentGraphic?.path;
     imagesLocalPaths = attachmentImages?.map((file) => file.path);
 
     let icon,
       video,
+      featureGraphic,
       images = [];
     if (iconLocalPath) {
       iconRemotePath = getIconsRemotePath(attachmentIcon.filename);
@@ -139,6 +158,17 @@ exports.createApp = async (req, res) => {
       video = {
         url: videoUrl,
         path: videoRemotePath,
+      };
+    }
+    if (graphicLocalpath) {
+      graphicRemotePath = getImagesRemotePath(attachmentGraphic.filename);
+      const graphicUrl = await uploadFileToStorage(
+        graphicLocalpath,
+        graphicRemotePath
+      );
+      featureGraphic = {
+        url: graphicUrl,
+        path: graphicRemotePath,
       };
     }
     if (imagesLocalPaths) {
@@ -161,10 +191,11 @@ exports.createApp = async (req, res) => {
       file,
       apkInfo,
       ipaInfo,
-      isIos,
+      platform,
       icon,
       images,
       video,
+      featureGraphic,
     });
     const result = await app.save();
     await UploadApp.deleteOne({ _id: uploadedAppId });
@@ -174,7 +205,12 @@ exports.createApp = async (req, res) => {
     logger.error(e, 'createApp');
     return handleError(e, res);
   } finally {
-    removeFiles([iconLocalPath, ...(imagesLocalPaths ?? []), videoLocalPath]);
+    removeFiles([
+      iconLocalPath,
+      ...(imagesLocalPaths ?? []),
+      videoLocalPath,
+      graphicLocalpath,
+    ]);
   }
 };
 
@@ -182,8 +218,10 @@ exports.uploadApp = async (req, res, next) => {
   let localPath, remotePath;
   try {
     const { file, user } = req;
-    let { isIos } = req.body;
-    isIos = isIos === 'true';
+    let { platform } = req.body;
+    if (!Object.values(PLATFORM).includes(platform)) {
+      throw new BadRequestError('Invalid Platform');
+    }
     if (!file?.path) {
       throw new BadRequestError('No file uploaded');
     }
@@ -198,14 +236,14 @@ exports.uploadApp = async (req, res, next) => {
     await deleteUserUploadedAppsFromBin(user._id);
 
     let apkInfo, ipaInfo;
-    if (isIos) {
+    if (platform === PLATFORM.IOS) {
       const {
         CFBundleShortVersionString: version,
         CFBundleIdentifier: identifier,
         MinimumOSVersion: minOSVersion,
       } = await getIpaInfo(localPath);
       ipaInfo = { version, identifier, minOSVersion };
-    } else {
+    } else if (platform === PLATFORM.ANDROID) {
       const {
         versionName: version,
         package,
@@ -219,7 +257,7 @@ exports.uploadApp = async (req, res, next) => {
     }
     const uploadedApp = new UploadApp({
       user: user._id,
-      isIos,
+      platform,
       apkInfo,
       ipaInfo,
       file: {
@@ -234,5 +272,36 @@ exports.uploadApp = async (req, res, next) => {
     return handleError(e, res);
   } finally {
     localPath && removeFile(localPath);
+  }
+};
+
+exports.deleteApp = async (req, res) => {
+  try {
+    const { appId } = req.params;
+    const { _id: userId } = req.user;
+    if (!isMongoId(appId)) {
+      throw new BadRequestError('Invalid appId');
+    }
+    const result = await App.findOneAndDelete({
+      _id: appId,
+      owner: userId,
+    }).lean();
+    if (!result) {
+      throw new BadRequestError('No App Found');
+    }
+    const { icon, video, featureGraphic, images = [], file } = result;
+    const imgPaths = images?.map((e) => e.path) ?? [];
+    const paths = [
+      icon?.path,
+      video?.path,
+      featureGraphic?.path,
+      file?.path,
+      ...imgPaths,
+    ];
+    const deletedFiles = await deleteFilesFromStorage(paths);
+    return res.json(success('App deleted successfully', result));
+  } catch (e) {
+    logger.error(e, 'deleteApp');
+    return handleError(e, res);
   }
 };

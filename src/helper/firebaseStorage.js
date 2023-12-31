@@ -35,6 +35,9 @@ const uploadFilesToStorage = async (localPaths, destPath) => {
 
 const deleteFileFromStorage = async (destPath) => {
   try {
+    if (!destPath) {
+      return new Error(`Invalid file path: ${destPath}`);
+    }
     const file = bucket.file(destPath);
     const result = await file.delete();
     // logger.info(downloadUrl, 'uploadFileToStorage' );

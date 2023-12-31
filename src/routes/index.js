@@ -9,5 +9,6 @@ router.use('/metadata', require('./metadata'));
 router.use('/apps', require('./apps'));
 router.use('/games', require('./games'));
 router.use('/websites', require('./website'));
+router.use('/featured', require('./featured'));
 
 module.exports = router;

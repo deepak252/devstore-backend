@@ -1,6 +1,6 @@
-const POPULATE_USER = {
+const POPULATE_OWNER = {
   path: 'owner',
-  select: '-password',
+  select: '_id username name email phone avatarUrl',
   strictPopulate: false,
 };
 
@@ -11,9 +11,10 @@ const SELECTED_FIELDS = [
   'icon',
   'categories',
   'owner',
+  'platform',
 ].join(' ');
 
 module.exports = {
-  POPULATE_USER,
+  POPULATE_OWNER,
   SELECTED_FIELDS,
 };

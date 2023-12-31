@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { apkInfoSchema, ipaInfoSchema, remoteFileSchema } = require('./schemas');
-const { REGEX } = require('../config/constants');
+const { REGEX, PLATFORM } = require('../config/constants');
 
 const appSchema = mongoose.Schema(
   {
@@ -14,15 +14,17 @@ const appSchema = mongoose.Schema(
     icon: remoteFileSchema,
     images: [remoteFileSchema],
     video: remoteFileSchema,
+    featureGraphic: remoteFileSchema,
     categories: [
       {
         type: String,
         trim: true,
       },
     ],
-    isIOS: {
-      type: Boolean,
-      default: false,
+    platform: {
+      type: String,
+      enum: PLATFORM,
+      default: PLATFORM.ANDROID,
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

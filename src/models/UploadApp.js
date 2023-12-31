@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { apkInfoSchema, ipaInfoSchema, remoteFileSchema } = require('./schemas');
+const { PLATFORM } = require('../config/constants');
 
 const uploadAppSchema = mongoose.Schema(
   {
@@ -8,9 +9,10 @@ const uploadAppSchema = mongoose.Schema(
       ref: 'User',
       required: [true, 'User Id is required'],
     },
-    isIos: {
-      type: Boolean,
-      required: [true, 'isIos is required'],
+    platform: {
+      type: String,
+      enum: PLATFORM,
+      default: PLATFORM.ANDROID,
     },
     file: {
       type: remoteFileSchema,
