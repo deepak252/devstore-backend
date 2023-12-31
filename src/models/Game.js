@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
-const { remoteFileSchema } = require('./schemas');
+const { apkInfoSchema, ipaInfoSchema, remoteFileSchema } = require('./schemas');
 const { REGEX } = require('../config/constants');
 
-const websiteSchema = mongoose.Schema(
+const gameSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Website name is required'],
+      required: [true, 'Game name is required'],
     },
     description: {
       type: String,
@@ -20,6 +20,10 @@ const websiteSchema = mongoose.Schema(
         trim: true,
       },
     ],
+    isIOS: {
+      type: Boolean,
+      default: false,
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -38,6 +42,12 @@ const websiteSchema = mongoose.Schema(
     isSourceCodePublic: {
       type: Boolean,
       default: true,
+    },
+    apkInfo: {
+      type: apkInfoSchema,
+    },
+    ipaInfo: {
+      type: ipaInfoSchema,
     },
     isPrivate: {
       type: Boolean,
@@ -65,4 +75,4 @@ const websiteSchema = mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Website', websiteSchema);
+module.exports = mongoose.model('Game', gameSchema);

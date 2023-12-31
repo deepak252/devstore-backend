@@ -1,15 +1,15 @@
 const router = require('express').Router();
 const upload = require('../config/upload');
 const {
-  getApps,
-  getAppById,
-  createApp,
+  getGames,
+  getGameById,
+  createGame,
   uploadApp,
-} = require('../controllers/appsController');
-const { userAuth, userToken } = require('../middlewares/auth.middleware');
+} = require('../controllers/gamesController');
+const { userAuth } = require('../middlewares/auth.middleware');
 
-router.get('/', userToken, getApps);
-router.get('/:appId', userToken, getAppById);
+router.get('/', getGames);
+router.get('/:id', getGameById);
 router.post(
   '/',
   userAuth,
@@ -18,7 +18,7 @@ router.post(
     { name: 'attachmenVideo', maxCount: 1 },
     { name: 'attachmentIcon', maxCount: 1 },
   ]),
-  createApp
+  createGame
 );
 router.post('/upload', userAuth, upload.single('attachmentApp'), uploadApp);
 

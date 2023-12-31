@@ -22,9 +22,7 @@ exports.userAuth = async (req, res, next) => {
     next();
   } catch (err) {
     logger.error(err, 'userAuth');
-    return res
-      .status(401)
-      .json(failure('Authentication Error'));
+    return res.status(401).json(failure('Authentication Error'));
   }
 };
 
@@ -33,7 +31,7 @@ exports.userToken = async (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
       const { user } = verifyJwtToken(token);
-      req.user = await User.findById(user._id);
+      req.user = await User.findById(user._id).lean();
     }
   } catch (err) {
     logger.error(err, 'userToken');

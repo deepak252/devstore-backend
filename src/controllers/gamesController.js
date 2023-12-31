@@ -1,5 +1,5 @@
-const { App } = require('../models');
-const { paginateQuery, isMongoId } = require('../utils/mongoUtil');
+const { Game } = require('../models');
+const { paginateQuery } = require('../utils/mongoUtil');
 const { success, handleError } = require('../utils/responseUtil');
 const { jsonTryParse } = require('../utils/misc');
 const {
@@ -19,54 +19,33 @@ const { uploadFileToStorage } = require('../helper/firebaseStorage');
 const UploadApp = require('../models/UploadApp');
 const { deleteUserUploadedAppsFromBin } = require('../helper/appsHelper');
 const { BadRequestError } = require('../utils/errors');
-const { SELECTED_FIELDS, POPULATE_USER } = require('../config/queryFilters');
 
-const logger = new Logger('AppsController');
+const logger = new Logger('GamesController');
 
-exports.getApps = async (req, res) => {
+exports.getGames = async (req, res) => {
   try {
     const { pageSize = 10, pageNumber = 1 } = req.query;
-    const filter = { $or: [{ isPrivate: false }, { owner: req?.user?._id }] };
-    const apps = await paginateQuery(
-      App.find(filter).select(SELECTED_FIELDS),
-      pageNumber,
-      pageSize
-    );
-    const totalResults = await App.countDocuments(filter);
+    const filter = {};
 
-    res.json(success(undefined, { apps, pageNumber, pageSize, totalResults }));
+    const games = await paginateQuery(Game.find(filter), pageNumber, pageSize);
+    const totalResults = await Game.countDocuments(filter);
+
+    res.json(success(undefined, { games, pageNumber, pageSize, totalResults }));
   } catch (e) {
-    logger.error(e, 'getApps');
+    logger.error(e, 'getGames');
     return handleError(e, res);
   }
 };
 
-exports.getAppById = async (req, res) => {
+exports.getGameById = async (req, res) => {
   try {
-    const { appId } = req.params;
-    if (!isMongoId(appId)) {
-      throw new BadRequestError('Invalid app ID');
-    }
-    let result = await App.findById(appId).populate(POPULATE_USER).lean();
-    if (!result) {
-      throw new BadRequestError('App not found');
-    }
-    if (!result.owner?._id?.equals(req.user?._id)) {
-      if (result.isPrivate) {
-        throw new BadRequestError('App not found');
-      }
-      if (!result.isSourceCodePublic) {
-        delete result.sourceCode;
-      }
-    }
-    return res.json(success(undefined, result));
+    res.json(success('Success'));
   } catch (e) {
-    logger.error(e, 'getAppById');
-    return handleError(e, res);
+    console.error('Error: getGameById');
   }
 };
 
-exports.createApp = async (req, res) => {
+exports.createGame = async (req, res) => {
   let iconLocalPath, videoLocalPath, imagesLocalPaths;
   let iconRemotePath,
     videoRemotePath,
@@ -92,7 +71,7 @@ exports.createApp = async (req, res) => {
       uploadedAppId,
     } = jsonTryParse(data);
 
-    let app = new App({
+    let game = new Game({
       name,
       description,
       categories,
@@ -102,7 +81,7 @@ exports.createApp = async (req, res) => {
       owner: userId,
     });
 
-    let error = app.validateSync();
+    let error = game.validateSync();
     if (error) {
       throw new BadRequestError(error.message);
     }
@@ -157,7 +136,7 @@ exports.createApp = async (req, res) => {
         imagesRemotePaths.push(imageRemotePath);
       }
     }
-    app.set({
+    game.set({
       file,
       apkInfo,
       ipaInfo,
@@ -166,12 +145,12 @@ exports.createApp = async (req, res) => {
       images,
       video,
     });
-    const result = await app.save();
+    const result = await game.save();
     await UploadApp.deleteOne({ _id: uploadedAppId });
 
-    res.json(success('App created successfully', result));
+    res.json(success('Game created successfully', result));
   } catch (e) {
-    logger.error(e, 'createApp');
+    logger.error(e, 'createGame');
     return handleError(e, res);
   } finally {
     removeFiles([iconLocalPath, ...(imagesLocalPaths ?? []), videoLocalPath]);
@@ -194,7 +173,7 @@ exports.uploadApp = async (req, res, next) => {
     //   success('File uploaded successfully', { _id: '123', isIos })
     // );
 
-    // Delete apps from bin for current user
+    // Delete games from bin for current user
     await deleteUserUploadedAppsFromBin(user._id);
 
     let apkInfo, ipaInfo;

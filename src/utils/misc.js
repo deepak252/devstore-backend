@@ -12,8 +12,17 @@ const uniqueRandomString = () => {
   return `${currentDateISOString()}_${generateRandomNumber()}`;
 };
 
+const jsonTryParse = (data) => {
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return {};
+  }
+};
+
 module.exports = {
   currentDateISOString,
   generateRandomNumber,
   uniqueRandomString,
+  jsonTryParse,
 };
