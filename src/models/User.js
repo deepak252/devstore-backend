@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       required: [true, 'Username is required'],
-      minLength: [3, 'Username must contain at least 3 characters'],
+      minLength: [4, 'Username must contain at least 4 characters'],
       maxLength: [20, 'Username should not contain more than 20 characters'],
       match: [
         REGEX.ALPHANUMERIC,
@@ -21,6 +21,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       // required: [true, "Name is required"],
       maxLength: [30, 'Name should not contain more than 30 characters'],
+    },
+    headline: {
+      type: String,
+      trim: true,
+      maxLength: [200, 'Headline should not contain more than 200 characters'],
     },
     email: {
       type: String,
@@ -50,6 +55,10 @@ const userSchema = new mongoose.Schema(
     },
     bio: {
       type: String,
+      maxLength: [
+        1000,
+        'Headline should not contain more than 1000 characters',
+      ],
     },
     githubUrl: {
       type: String,

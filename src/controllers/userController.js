@@ -1,4 +1,6 @@
-const { User } = require('../models');
+const { INVALID_USERNAMES } = require('../config/constants');
+const { SELECTED_FIELDS, POPULATE_OWNER } = require('../config/queryFilters');
+const { User, App } = require('../models');
 const { BadRequestError } = require('../utils/errors');
 const Logger = require('../utils/logger');
 const { isMongoId } = require('../utils/mongoUtil');
@@ -35,16 +37,25 @@ exports.getUserByUsername = async (req, res) => {
     if (!username?.trim()?.length) {
       throw new BadRequestError("username can't be empty");
     }
-    const exclude =
-      username !== req.user?.username
-        ? '-favoriteApps -favoriteGames -favoriteWebsites'
-        : '';
+    const isMe = username === req.user?.username;
+    const exclude = !isMe
+      ? '-favoriteApps -favoriteGames -favoriteWebsites'
+      : '';
     let result = await User.findByUsername(username).select(
       `-password ${exclude}`
     );
     if (!result) {
       throw new BadRequestError('User does not exist');
     }
+    let filter = {};
+    if (!isMe) {
+      filter = { isPrivate: false };
+    }
+    let selectedFields = SELECTED_FIELDS + '  featureGraphic';
+    let apps = await App.find(filter)
+      .populate(POPULATE_OWNER)
+      .select(selectedFields);
+    result.apps = apps;
     return res.json(success(undefined, result));
   } catch (e) {
     logger.error(e, 'getUserByUsername');
@@ -109,6 +120,9 @@ exports.checkUsernameAvailable = async (req, res) => {
     const { username } = req.body;
     if (!username) {
       throw new BadRequestError('Username is required');
+    }
+    if (INVALID_USERNAMES.includes(username.toLowerCase())) {
+      throw new BadRequestError('Username is not available');
     }
     const result = await User.findByUsername(username);
     if (result) {
