@@ -1,25 +1,19 @@
-const { BadRequestError } = require('./errors');
+import { BadRequestError } from './errors.js';
 
-const success = (message, data) => ({
+export const success = (message, data) => ({
   success: true,
   message,
-  data,
+  data
 });
 
-const failure = (message) => ({
+export const failure = (message) => ({
   success: false,
-  message,
+  message
 });
 
-const handleError = (e, res) => {
+export const handleError = (e, res) => {
   if (e instanceof BadRequestError) {
     return res.status(400).json(failure(e.message));
   }
   return res.status(500).json(failure('Internal Server Error'));
-};
-
-module.exports = {
-  success,
-  failure,
-  handleError,
 };

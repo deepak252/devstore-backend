@@ -1,12 +1,12 @@
-const { Metadata } = require('../models');
-const { BadRequestError } = require('../utils/errors');
-const Logger = require('../utils/logger');
-const { isMongoId } = require('../utils/mongoUtil');
-const { success, handleError } = require('../utils/responseUtil');
+import Metadata from '../models/Metadata.js';
+import { BadRequestError } from '../utils/errors.js';
+import { isMongoId } from '../utils/mongoUtil.js';
+import { success, handleError } from '../utils/responseUtil.js';
+import Logger from '../utils/logger.js';
 
 const logger = new Logger('MetadataController');
 
-exports.getMetadata = async (req, res) => {
+export const getMetadata = async (req, res) => {
   try {
     let result = await Metadata.findOne({ enabled: true }).select(
       'appCategories websiteCategories gameCategories'
@@ -18,13 +18,13 @@ exports.getMetadata = async (req, res) => {
   }
 };
 
-exports.createMetadata = async (req, res) => {
+export const createMetadata = async (req, res) => {
   try {
     const { appCategories, websiteCategories, gameCategories } = req.body;
     let metadata = new Metadata({
       appCategories,
       websiteCategories,
-      gameCategories,
+      gameCategories
     });
     const error = metadata.validateSync();
     if (error) {
@@ -38,7 +38,7 @@ exports.createMetadata = async (req, res) => {
   }
 };
 
-exports.deleteMetadata = async (req, res) => {
+export const deleteMetadata = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isMongoId(id)) {

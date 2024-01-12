@@ -1,33 +1,33 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const metadataSchema = mongoose.Schema(
   {
     appCategories: [
       {
         type: String,
-        default: [],
-      },
+        default: []
+      }
     ],
     websiteCategories: [
       {
         type: String,
-        default: [],
-      },
+        default: []
+      }
     ],
     gameCategories: [
       {
         type: String,
-        default: [],
-      },
+        default: []
+      }
     ],
     enabled: {
       type: Boolean,
-      default: true,
-    },
+      default: true
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-module.exports = mongoose.model('Metadata', metadataSchema);
+export default mongoose.model('Metadata', metadataSchema);

@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const { REGEX } = require('../config/constants');
-const { comparePassword } = require('../utils/authUtil');
+import mongoose from 'mongoose';
+import { REGEX, INVALID_USERNAMES } from '../config/constants.js';
+import { comparePassword } from '../utils/authUtil.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,18 +9,29 @@ const userSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       required: [true, 'Username is required'],
-      minLength: [3, 'Username must contain at least 3 characters'],
+      minLength: [4, 'Username must contain at least 4 characters'],
       maxLength: [20, 'Username should not contain more than 20 characters'],
       match: [
         REGEX.ALPHANUMERIC,
-        'Username should contain only letters and numbers',
+        'Username should contain only letters and numbers'
       ],
+      validate: {
+        validator: function (value) {
+          return !INVALID_USERNAMES.includes(value.toLowerCase());
+        },
+        message: 'Invalid username'
+      }
     },
     name: {
       type: String,
       trim: true,
       // required: [true, "Name is required"],
-      maxLength: [30, 'Name should not contain more than 30 characters'],
+      maxLength: [30, 'Name should not contain more than 30 characters']
+    },
+    headline: {
+      type: String,
+      trim: true,
+      maxLength: [200, 'Headline should not contain more than 200 characters']
     },
     email: {
       type: String,
@@ -28,12 +39,12 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       required: [true, 'Email is required'],
       match: [REGEX.EMAIL, 'Invalid email'],
-      unique: true,
+      unique: true
     },
     password: {
       type: String,
       trim: true,
-      required: [true, 'Password is required'],
+      required: [true, 'Password is required']
     },
     phone: {
       type: String,
@@ -41,79 +52,80 @@ const userSchema = new mongoose.Schema(
       // required: [true, "Phone number is required"],
       match: [REGEX.PHONE, 'Invalid phone number'],
       unique: true,
-      sparse: true, //allows multiple documents to have a null or missing phone
+      sparse: true //allows multiple documents to have a null or missing phone
     },
     avatarUrl: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid avatar URL'],
+      match: [REGEX.URL, 'Invalid avatar URL']
     },
     bio: {
       type: String,
+      maxLength: [1000, 'Headline should not contain more than 1000 characters']
     },
     githubUrl: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid Github URL'],
+      match: [REGEX.URL, 'Invalid Github URL']
     },
     linkedinUrl: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid Linkedin URL'],
+      match: [REGEX.URL, 'Invalid Linkedin URL']
     },
     twitterUrl: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid Twitter URL'],
+      match: [REGEX.URL, 'Invalid Twitter URL']
     },
     apps: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'App',
-      },
+        ref: 'App'
+      }
     ],
     websites: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Website',
-      },
+        ref: 'Website'
+      }
     ],
     games: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game',
-      },
+        ref: 'Game'
+      }
     ],
     favoriteApps: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'App',
-      },
+        ref: 'App'
+      }
     ],
     favoriteWebsites: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Website',
-      },
+        ref: 'Website'
+      }
     ],
     favoriteGames: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game',
-      },
+        ref: 'Game'
+      }
     ],
     followers: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
+        ref: 'User'
+      }
     ],
     following: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+        ref: 'User'
+      }
+    ]
   },
   {
     timestamps: true,
@@ -129,8 +141,8 @@ const userSchema = new mongoose.Schema(
           return this.findByEmail(usernameOrEmail.toLowerCase().trim());
         }
         return this.findByUsername(usernameOrEmail);
-      },
-    },
+      }
+    }
   }
 );
 
@@ -138,4 +150,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return await comparePassword(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

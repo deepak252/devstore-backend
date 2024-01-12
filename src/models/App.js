@@ -1,57 +1,59 @@
-const mongoose = require('mongoose');
-const { apkInfoSchema, ipaInfoSchema, remoteFileSchema } = require('./schemas');
-const { REGEX } = require('../config/constants');
+import mongoose from 'mongoose';
+import { REGEX, PLATFORM } from '../config/constants.js';
+import { apkInfoSchema, ipaInfoSchema, remoteFileSchema } from './schemas.js';
 
 const appSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'App name is required'],
+      required: [true, 'App name is required']
     },
     description: {
-      type: String,
+      type: String
     },
     icon: remoteFileSchema,
     images: [remoteFileSchema],
     video: remoteFileSchema,
+    featureGraphic: remoteFileSchema,
     categories: [
       {
         type: String,
-        trim: true,
-      },
+        trim: true
+      }
     ],
-    isIOS: {
-      type: Boolean,
-      default: false,
+    platform: {
+      type: String,
+      enum: PLATFORM,
+      default: PLATFORM.ANDROID
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Owner Id is required'],
+      required: [true, 'Owner Id is required']
     },
     file: remoteFileSchema,
     totalDownloads: {
       type: Number,
-      default: 0,
+      default: 0
     },
     sourceCode: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid source code URL'],
+      match: [REGEX.URL, 'Invalid source code URL']
     },
     isSourceCodePublic: {
       type: Boolean,
-      default: true,
+      default: true
     },
     apkInfo: {
-      type: apkInfoSchema,
+      type: apkInfoSchema
     },
     ipaInfo: {
-      type: ipaInfoSchema,
+      type: ipaInfoSchema
     },
     isPrivate: {
       type: Boolean,
-      default: false,
+      default: false
     },
     // comments: [
     //   {
@@ -62,17 +64,17 @@ const appSchema = mongoose.Schema(
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
+        ref: 'User'
+      }
     ],
     lastUpdated: {
       type: Date,
-      default: Date.now,
-    },
+      default: Date.now
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-module.exports = mongoose.model('App', appSchema);
+export default mongoose.model('App', appSchema);

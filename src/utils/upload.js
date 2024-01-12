@@ -1,24 +1,28 @@
-const multer = require('multer');
-const { uniqueRandomString, currentDateISOString } = require('../utils/misc');
-const path = require('path');
-const { createDirectoryIfNotExists, removeFile, getFileExtension } = require('../utils/fileUtil');
-const destPath = 'uploads/';
+import multer from 'multer';
+import path from 'path';
+import { uniqueRandomString } from './misc.js';
+import {
+  createDirectoryIfNotExists,
+  removeFile,
+  getFileExtension
+} from './fileUtil.js';
 
+const destPath = 'uploads/';
 // const upload = multer({dest: 'uploads/'});
 
 const getFileName = (user, file) => {
   let filename = uniqueRandomString();
   const ext = getFileExtension(file?.originalname);
-  if(user?.username){
+  if (user?.username) {
     filename = `${user.username}_${filename}`;
   }
-  if(file.fieldname==='attachmentApp'){
+  if (file.fieldname === 'attachmentApp') {
     filename = `${filename}_app`;
-  }else if(ext){
+  } else if (ext) {
     filename = `${filename}.${ext}`;
   }
   return filename;
-}
+};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -38,9 +42,7 @@ const storage = multer.diskStorage({
       });
       file.stream.emit('end');
     });
-  },
+  }
 });
 
-const upload = multer({ storage: storage });
-
-module.exports = upload;
+export default multer({ storage: storage });

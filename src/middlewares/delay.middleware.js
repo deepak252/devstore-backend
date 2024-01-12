@@ -1,4 +1,4 @@
-exports.delay = async (req, res, next) => {
+export const delay = async (req, res, next) => {
   await wait(1000);
   next();
 };

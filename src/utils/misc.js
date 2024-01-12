@@ -1,19 +1,21 @@
-const currentDateISOString = () => {
+export const currentDateISOString = () => {
   return new Date()
     .toISOString()
     .replace(/[-T:.Z]/g, '_')
     .substring(0, 23);
 };
-const generateRandomNumber = () => {
+export const generateRandomNumber = () => {
   return Math.round(Math.random() * 1e9);
 };
 
-const uniqueRandomString = () => {
+export const uniqueRandomString = () => {
   return `${currentDateISOString()}_${generateRandomNumber()}`;
 };
 
-module.exports = {
-  currentDateISOString,
-  generateRandomNumber,
-  uniqueRandomString,
+export const jsonTryParse = (data) => {
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return {};
+  }
 };
