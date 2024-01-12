@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { REGEX } = require('../config/constants');
+const { REGEX, INVALID_USERNAMES } = require('../config/constants');
 const { comparePassword } = require('../utils/authUtil');
 
 const userSchema = new mongoose.Schema(
@@ -15,6 +15,12 @@ const userSchema = new mongoose.Schema(
         REGEX.ALPHANUMERIC,
         'Username should contain only letters and numbers',
       ],
+      validate: {
+        validator: function(value) {
+          return !INVALID_USERNAMES.includes(value.toLowerCase());
+        },
+        message: 'Invalid username',
+      },
     },
     name: {
       type: String,

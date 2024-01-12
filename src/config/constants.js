@@ -63,13 +63,15 @@ const INVALID_USERNAMES = [
   'authentication',
   'signupform',
   'signinform',
+  'sign',
   'signup',
   'signin',
   'login',
   'logout',
   'join',
   'form',
-  'main'
+  'main',
+  'pricing'
 ];
 
 module.exports = {
