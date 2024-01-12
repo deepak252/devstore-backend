@@ -1,13 +1,13 @@
-const { bucket, getDownloadURL } = require('../config/firebase');
-const Logger = require('../utils/logger');
+import { bucket, getDownloadURL } from '../config/firebase.js';
+import Logger from '../utils/logger.js';
 const logger = new Logger('firebaseStorage');
 
 // https://googleapis.dev/nodejs/storage/latest/Bucket.html#upload
-const uploadFileToStorage = async (localPath, destPath) => {
+export const uploadFileToStorage = async (localPath, destPath) => {
   try {
     const options = {
       destination: destPath,
-      gzip: true,
+      gzip: true
     };
     await bucket.upload(localPath, options);
     const file = bucket.file(destPath);
@@ -24,16 +24,16 @@ const uploadFileToStorage = async (localPath, destPath) => {
   }
 };
 
-const uploadFilesToStorage = async (localPaths, destPath) => {
+export const uploadFilesToStorage = async (localPaths, destPath) => {
   const urls = [];
-  for (local of localPaths) {
+  for (let local of localPaths) {
     const url = await uploadFileToStorage(local, destPath);
     urls.push(url);
   }
   return urls;
 };
 
-const deleteFileFromStorage = async (destPath) => {
+export const deleteFileFromStorage = async (destPath) => {
   try {
     if (!destPath) {
       return new Error(`Invalid file path: ${destPath}`);
@@ -52,7 +52,7 @@ const deleteFileFromStorage = async (destPath) => {
   }
 };
 
-const deleteFilesFromStorage = async (destPaths = []) => {
+export const deleteFilesFromStorage = async (destPaths = []) => {
   try {
     const result = await Promise.all(
       destPaths.map(async (path) => {
@@ -64,10 +64,4 @@ const deleteFilesFromStorage = async (destPaths = []) => {
     logger.error(e, 'deleteFilesFromStorage');
     throw new Error('Error while deleting files');
   }
-};
-module.exports = {
-  uploadFileToStorage,
-  uploadFilesToStorage,
-  deleteFileFromStorage,
-  deleteFilesFromStorage,
 };

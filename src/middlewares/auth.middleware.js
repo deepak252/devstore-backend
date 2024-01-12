@@ -1,12 +1,14 @@
-const { User } = require('../models');
-const { verifyJwtToken } = require('../utils/authUtil');
-const Logger = require('../utils/logger');
-const { failure } = require('../utils/responseUtil');
+import User from '../models/User.js';
+import { verifyJwtToken } from '../utils/authUtil.js';
+import { failure } from '../utils/responseUtil.js';
+import Logger from '../utils/logger.js';
+
 const logger = new Logger('AuthMiddleware');
+
 /**
  *  Verify User token
  * */
-exports.userAuth = async (req, res, next) => {
+export const userAuth = async (req, res, next) => {
   try {
     const token = req.headers.authorization;
     if (!token) {
@@ -26,7 +28,7 @@ exports.userAuth = async (req, res, next) => {
   }
 };
 
-exports.userToken = async (req, res, next) => {
+export const userToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization;
     if (token) {

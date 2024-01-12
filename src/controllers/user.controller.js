@@ -1,17 +1,18 @@
-const { INVALID_USERNAMES } = require('../config/constants');
-const { SELECTED_FIELDS, POPULATE_OWNER } = require('../config/queryFilters');
-const { User, App } = require('../models');
-const { BadRequestError } = require('../utils/errors');
-const Logger = require('../utils/logger');
-const { isMongoId } = require('../utils/mongoUtil');
-const { success, handleError } = require('../utils/responseUtil');
+import User from '../models/User.js';
+import App from '../models/App.js';
+import { INVALID_USERNAMES } from '../config/constants.js';
+import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
+import { BadRequestError } from '../utils/errors.js';
+import { isMongoId } from '../utils/mongoUtil.js';
+import { success, handleError } from '../utils/responseUtil.js';
+import Logger from '../utils/logger.js';
 
 const logger = new Logger('UserController');
 
 /**
  *  Auth Token Required
  * */
-exports.getUser = async (req, res) => {
+export const getUser = async (req, res) => {
   try {
     const { _id: userId } = req.user;
     if (!userId) {
@@ -31,7 +32,7 @@ exports.getUser = async (req, res) => {
   }
 };
 
-exports.getUserByUsername = async (req, res) => {
+export const getUserByUsername = async (req, res) => {
   try {
     const { username } = req.params;
     if (!username?.trim()?.length) {
@@ -63,9 +64,9 @@ exports.getUserByUsername = async (req, res) => {
   }
 };
 
-exports.updateUser = async (req, res) => {
+export const updateUser = async (req, res) => {
   try {
-    const { id, name, email, phone } = req.body;
+    const { name, email, phone } = req.body;
     const { _id: userId } = req.user;
     if (!userId) {
       throw new BadRequestError('userId is required');
@@ -78,7 +79,7 @@ exports.updateUser = async (req, res) => {
       {
         name,
         email,
-        phone,
+        phone
       },
       { runValidators: true, new: true }
     );
@@ -93,7 +94,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-exports.deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
     if (!userId) {
@@ -115,7 +116,7 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-exports.checkUsernameAvailable = async (req, res) => {
+export const checkUsernameAvailable = async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) {

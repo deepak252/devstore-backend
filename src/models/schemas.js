@@ -1,36 +1,36 @@
-const mongoose = require('mongoose');
-const { REGEX } = require('../config/constants');
+import mongoose from 'mongoose';
+import { REGEX } from '../config/constants.js';
 
-exports.apkInfoSchema = mongoose.Schema(
+export const apkInfoSchema = mongoose.Schema(
   {
     version: String, //versionName
     package: String, //package
     minSdkVersion: Number, //usesSdk/minSdkVersion
-    targetSdkVersion: Number, //usesSdk/targetSdkVersion
+    targetSdkVersion: Number //usesSdk/targetSdkVersion
   },
   { _id: false }
 );
 
-exports.ipaInfoSchema = mongoose.Schema(
+export const ipaInfoSchema = mongoose.Schema(
   {
     version: String, //CFBundleShortVersionString
     identifier: String, //CFBundleIdentifier
-    minOSVersion: Number, //MinimumOSVersion
+    minOSVersion: Number //MinimumOSVersion
   },
   { _id: false }
 );
 
-exports.remoteFileSchema = mongoose.Schema(
+export const remoteFileSchema = mongoose.Schema(
   {
     url: {
       type: String,
       trim: true,
-      match: [REGEX.URL, 'Invalid file URL'],
+      match: [REGEX.URL, 'Invalid file URL']
     },
     path: {
       type: String,
-      trim: true,
-    },
+      trim: true
+    }
   },
   { _id: false }
 );

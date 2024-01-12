@@ -1,13 +1,14 @@
-
-const router = require('express').Router();
-const { 
+import { Router } from 'express';
+import {
   featuredProjects,
   getBanners,
   createBanner
-} = require('../controllers/featuredController');
+} from '../controllers/featured.controller.js';
+
+const router = Router();
 
 router.get('/all', featuredProjects);
 router.get('/banners', getBanners);
 router.post('/banners', createBanner);
 
-module.exports = router;
+export default router;

@@ -1,35 +1,36 @@
-const { App } = require('../models');
-const { paginateQuery, isMongoId } = require('../utils/mongoUtil');
-const { success, handleError } = require('../utils/responseUtil');
-const { jsonTryParse } = require('../utils/misc');
-const {
+import App from '../models/App.js';
+import UploadApp from '../models/UploadApp.js';
+import { deleteUserUploadedAppsFromBin } from '../helper/appsHelper.js';
+import {
+  uploadFileToStorage,
+  deleteFilesFromStorage
+} from '../helper/firebaseStorage.js';
+import {
   getIconsRemotePath,
   getVideosRemotePath,
   getImagesRemotePath,
-  getAppsRemotePath,
-} = require('../utils/storageUtil');
-const Logger = require('../utils/logger');
-const {
+  getAppsRemotePath
+} from '../utils/storageUtil.js';
+import {
   removeFile,
   getApkInfo,
   getIpaInfo,
-  removeFiles,
-} = require('../utils/fileUtil');
-const {
-  uploadFileToStorage,
-  deleteFilesFromStorage,
-} = require('../helper/firebaseStorage');
-const UploadApp = require('../models/UploadApp');
-const { deleteUserUploadedAppsFromBin } = require('../helper/appsHelper');
-const { BadRequestError } = require('../utils/errors');
-const { SELECTED_FIELDS, POPULATE_OWNER } = require('../config/queryFilters');
-const { PLATFORM } = require('../config/constants');
+  removeFiles
+} from '../utils/fileUtil.js';
+import { jsonTryParse } from '../utils/misc.js';
+import { paginateQuery, isMongoId } from '../utils/mongoUtil.js';
+import { success, handleError } from '../utils/responseUtil.js';
+import { BadRequestError } from '../utils/errors.js';
+import Logger from '../utils/logger.js';
+import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
+import { PLATFORM } from '../config/constants.js';
 
 const logger = new Logger('AppsController');
 
-exports.getApps = async (req, res) => {
+export const getApps = async (req, res) => {
   try {
     const { pageSize = 10, pageNumber = 1, searchQuery = '' } = req.query;
+    // eslint-disable-next-line no-unused-vars
     let { platform, categories } = req.body;
     let reqFilter = {};
     if (Object.values(PLATFORM).includes(platform)) {
@@ -39,8 +40,8 @@ exports.getApps = async (req, res) => {
       $and: [
         reqFilter,
         { $or: [{ isPrivate: false }, { owner: req?.user?._id }] },
-        { name: { $regex: searchQuery.trim(), $options: 'i' } },
-      ],
+        { name: { $regex: searchQuery.trim(), $options: 'i' } }
+      ]
     };
     const apps = await paginateQuery(
       App.find(filter).select(SELECTED_FIELDS),
@@ -56,7 +57,7 @@ exports.getApps = async (req, res) => {
   }
 };
 
-exports.getAppById = async (req, res) => {
+export const getAppById = async (req, res) => {
   try {
     const { appId } = req.params;
     if (!isMongoId(appId)) {
@@ -81,7 +82,7 @@ exports.getAppById = async (req, res) => {
   }
 };
 
-exports.createApp = async (req, res) => {
+export const createApp = async (req, res) => {
   let iconLocalPath, videoLocalPath, imagesLocalPaths, graphicLocalpath;
   let iconRemotePath,
     videoRemotePath,
@@ -95,8 +96,8 @@ exports.createApp = async (req, res) => {
         attachmentIcon: [attachmentIcon] = [],
         attachmentVideo: [attachmentVideo] = [],
         attachmentGraphic: [attachmentGraphic] = [],
-        attachmentImages,
-      } = {},
+        attachmentImages
+      } = {}
     } = req;
 
     let {
@@ -106,7 +107,7 @@ exports.createApp = async (req, res) => {
       sourceCode,
       isSourceCodePublic,
       isPrivate,
-      uploadedAppId,
+      uploadedAppId
     } = jsonTryParse(data);
 
     let app = new App({
@@ -116,7 +117,7 @@ exports.createApp = async (req, res) => {
       sourceCode,
       isSourceCodePublic,
       isPrivate,
-      owner: userId,
+      owner: userId
     });
 
     let error = app.validateSync();
@@ -125,7 +126,7 @@ exports.createApp = async (req, res) => {
     }
     const uploadedApp = await UploadApp.findOne({
       _id: uploadedAppId,
-      user: userId,
+      user: userId
     }).lean();
     if (!uploadedApp) {
       throw new BadRequestError('Application file not found. Please try again');
@@ -146,7 +147,7 @@ exports.createApp = async (req, res) => {
       const iconUrl = await uploadFileToStorage(iconLocalPath, iconRemotePath);
       icon = {
         url: iconUrl,
-        path: iconRemotePath,
+        path: iconRemotePath
       };
     }
     if (videoLocalPath) {
@@ -157,7 +158,7 @@ exports.createApp = async (req, res) => {
       );
       video = {
         url: videoUrl,
-        path: videoRemotePath,
+        path: videoRemotePath
       };
     }
     if (graphicLocalpath) {
@@ -168,11 +169,11 @@ exports.createApp = async (req, res) => {
       );
       featureGraphic = {
         url: graphicUrl,
-        path: graphicRemotePath,
+        path: graphicRemotePath
       };
     }
     if (imagesLocalPaths) {
-      for (attach of attachmentImages) {
+      for (let attach of attachmentImages) {
         const imageRemotePath = getImagesRemotePath(attach.filename);
         const imageUrl = await uploadFileToStorage(
           attach?.path,
@@ -181,7 +182,7 @@ exports.createApp = async (req, res) => {
         if (typeof imageUrl === 'string') {
           images.push({
             url: imageUrl,
-            path: imageRemotePath,
+            path: imageRemotePath
           });
         }
         imagesRemotePaths.push(imageRemotePath);
@@ -195,7 +196,7 @@ exports.createApp = async (req, res) => {
       icon,
       images,
       video,
-      featureGraphic,
+      featureGraphic
     });
     const result = await app.save();
     await UploadApp.deleteOne({ _id: uploadedAppId });
@@ -209,12 +210,12 @@ exports.createApp = async (req, res) => {
       iconLocalPath,
       ...(imagesLocalPaths ?? []),
       videoLocalPath,
-      graphicLocalpath,
+      graphicLocalpath
     ]);
   }
 };
 
-exports.uploadApp = async (req, res, next) => {
+export const uploadApp = async (req, res) => {
   let localPath, remotePath;
   try {
     const { file, user } = req;
@@ -240,16 +241,16 @@ exports.uploadApp = async (req, res, next) => {
       const {
         CFBundleShortVersionString: version,
         CFBundleIdentifier: identifier,
-        MinimumOSVersion: minOSVersion,
+        MinimumOSVersion: minOSVersion
       } = await getIpaInfo(localPath);
       ipaInfo = { version, identifier, minOSVersion };
     } else if (platform === PLATFORM.ANDROID) {
       const {
         versionName: version,
-        package,
-        usesSdk: { minSdkVersion, targetSdkVersion },
+        package: p,
+        usesSdk: { minSdkVersion, targetSdkVersion }
       } = await getApkInfo(localPath);
-      apkInfo = { version, package, minSdkVersion, targetSdkVersion };
+      apkInfo = { version, package: p, minSdkVersion, targetSdkVersion };
     }
     const downloadUrl = await uploadFileToStorage(localPath, remotePath);
     if (typeof downloadUrl !== 'string') {
@@ -262,8 +263,8 @@ exports.uploadApp = async (req, res, next) => {
       ipaInfo,
       file: {
         url: downloadUrl,
-        path: remotePath,
-      },
+        path: remotePath
+      }
     });
     const result = await uploadedApp.save();
     res.json(success('File uploaded successfully', result));
@@ -275,7 +276,7 @@ exports.uploadApp = async (req, res, next) => {
   }
 };
 
-exports.deleteApp = async (req, res) => {
+export const deleteApp = async (req, res) => {
   try {
     const { appId } = req.params;
     const { _id: userId } = req.user;
@@ -284,7 +285,7 @@ exports.deleteApp = async (req, res) => {
     }
     const result = await App.findOneAndDelete({
       _id: appId,
-      owner: userId,
+      owner: userId
     }).lean();
     if (!result) {
       throw new BadRequestError('No App Found');
@@ -296,8 +297,9 @@ exports.deleteApp = async (req, res) => {
       video?.path,
       featureGraphic?.path,
       file?.path,
-      ...imgPaths,
+      ...imgPaths
     ];
+    // eslint-disable-next-line no-unused-vars
     const deletedFiles = await deleteFilesFromStorage(paths);
     return res.json(success('App deleted successfully', result));
   } catch (e) {

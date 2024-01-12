@@ -1,19 +1,19 @@
-const { User } = require('../models');
-const { failure, success, handleError } = require('../utils/responseUtil');
-const { getJwtToken, getHashedPassword } = require('../utils/authUtil');
-const { REGEX } = require('../config/constants');
-const Logger = require('../utils/logger');
-const { BadRequestError } = require('../utils/errors');
+import User from '../models/User.js';
+import { getJwtToken, getHashedPassword } from '../utils/authUtil.js';
+import { BadRequestError } from '../utils/errors.js';
+import { failure, success, handleError } from '../utils/responseUtil.js';
+import Logger from '../utils/logger.js';
+import { REGEX } from '../config/constants.js';
 
 const logger = new Logger('AuthController');
 
-exports.signUp = async (req, res) => {
+export const signUp = async (req, res) => {
   try {
     const { username, email, password } = req.body;
     let user = new User({
       username,
       email,
-      password,
+      password
     });
     let error = user.validateSync();
     if (error) {
@@ -38,7 +38,7 @@ exports.signUp = async (req, res) => {
   }
 };
 
-exports.signIn = async (req, res) => {
+export const signIn = async (req, res) => {
   try {
     let { usernameOrEmail, password } = req.body;
     if (!usernameOrEmail || !password) {
@@ -56,7 +56,7 @@ exports.signIn = async (req, res) => {
   }
 };
 
-exports.resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   try {
     let { email, newPassword } = req.body;
     if (!email || !newPassword) {
