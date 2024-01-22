@@ -1,11 +1,11 @@
 import multer from 'multer';
 import path from 'path';
-import { uniqueRandomString } from './misc.js';
 import {
   createDirectoryIfNotExists,
-  removeFile,
-  getFileExtension
-} from './fileUtil.js';
+  getFileExtension,
+  removeFile
+} from '../utils/fileUtil.js';
+import { uniqueRandomString } from '../utils/misc.js';
 
 const destPath = 'uploads/';
 // const upload = multer({dest: 'uploads/'});
@@ -45,4 +45,4 @@ const storage = multer.diskStorage({
   }
 });
 
-export default multer({ storage: storage });
+export const upload = multer({ storage: storage });

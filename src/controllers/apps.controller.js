@@ -6,12 +6,6 @@ import {
   deleteFilesFromStorage
 } from '../helper/firebaseStorage.js';
 import {
-  getIconsRemotePath,
-  getVideosRemotePath,
-  getImagesRemotePath,
-  getAppsRemotePath
-} from '../utils/storageUtil.js';
-import {
   removeFile,
   getApkInfo,
   getIpaInfo,
@@ -19,11 +13,12 @@ import {
 } from '../utils/fileUtil.js';
 import { jsonTryParse } from '../utils/misc.js';
 import { paginateQuery, isMongoId } from '../utils/mongoUtil.js';
-import { success, handleError } from '../utils/responseUtil.js';
-import { BadRequestError } from '../utils/errors.js';
+import { handleError } from '../utils/responseUtil.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import Logger from '../utils/logger.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
-import { PLATFORM } from '../config/constants.js';
+import { PLATFORM, REMOTE_PATH } from '../config/constants.js';
 
 const logger = new Logger('AppsController');
 
@@ -50,7 +45,9 @@ export const getApps = async (req, res) => {
     );
     const totalResults = await App.countDocuments(filter);
 
-    res.json(success(undefined, { apps, pageNumber, pageSize, totalResults }));
+    res.json(
+      new ApiResponse(undefined, { apps, pageNumber, pageSize, totalResults })
+    );
   } catch (e) {
     logger.error(e, 'getApps');
     return handleError(e, res);
@@ -61,21 +58,21 @@ export const getAppById = async (req, res) => {
   try {
     const { appId } = req.params;
     if (!isMongoId(appId)) {
-      throw new BadRequestError('Invalid app ID');
+      throw new ApiError('Invalid app ID');
     }
     let result = await App.findById(appId).populate(POPULATE_OWNER).lean();
     if (!result) {
-      throw new BadRequestError('App not found');
+      throw new ApiError('App not found');
     }
     if (!result.owner?._id?.equals(req.user?._id)) {
       if (result.isPrivate) {
-        throw new BadRequestError('App not found');
+        throw new ApiError('App not found');
       }
       if (!result.isSourceCodePublic) {
         delete result.sourceCode;
       }
     }
-    return res.json(success(undefined, result));
+    return res.json(new ApiResponse(undefined, result));
   } catch (e) {
     logger.error(e, 'getAppById');
     return handleError(e, res);
@@ -107,7 +104,8 @@ export const createApp = async (req, res) => {
       sourceCode,
       isSourceCodePublic,
       isPrivate,
-      uploadedAppId
+      uploadedAppId,
+      otherLinks
     } = jsonTryParse(data);
 
     let app = new App({
@@ -117,19 +115,20 @@ export const createApp = async (req, res) => {
       sourceCode,
       isSourceCodePublic,
       isPrivate,
-      owner: userId
+      owner: userId,
+      otherLinks
     });
 
     let error = app.validateSync();
     if (error) {
-      throw new BadRequestError(error.message);
+      throw new ApiError(error.message);
     }
     const uploadedApp = await UploadApp.findOne({
       _id: uploadedAppId,
       user: userId
     }).lean();
     if (!uploadedApp) {
-      throw new BadRequestError('Application file not found. Please try again');
+      throw new ApiError('Application file not found. Please try again');
     }
     const { file, apkInfo, ipaInfo, platform } = uploadedApp;
 
@@ -143,7 +142,7 @@ export const createApp = async (req, res) => {
       featureGraphic,
       images = [];
     if (iconLocalPath) {
-      iconRemotePath = getIconsRemotePath(attachmentIcon.filename);
+      iconRemotePath = `${REMOTE_PATH.icons}/${attachmentIcon.filename}`;
       const iconUrl = await uploadFileToStorage(iconLocalPath, iconRemotePath);
       icon = {
         url: iconUrl,
@@ -151,7 +150,7 @@ export const createApp = async (req, res) => {
       };
     }
     if (videoLocalPath) {
-      videoRemotePath = getVideosRemotePath(attachmentVideo.filename);
+      videoRemotePath = `${REMOTE_PATH.videos}/${attachmentVideo.filename}`;
       const videoUrl = await uploadFileToStorage(
         videoLocalPath,
         videoRemotePath
@@ -162,7 +161,7 @@ export const createApp = async (req, res) => {
       };
     }
     if (graphicLocalpath) {
-      graphicRemotePath = getImagesRemotePath(attachmentGraphic.filename);
+      graphicRemotePath = `${REMOTE_PATH.images}/${attachmentGraphic.filename}`;
       const graphicUrl = await uploadFileToStorage(
         graphicLocalpath,
         graphicRemotePath
@@ -174,7 +173,7 @@ export const createApp = async (req, res) => {
     }
     if (imagesLocalPaths) {
       for (let attach of attachmentImages) {
-        const imageRemotePath = getImagesRemotePath(attach.filename);
+        const imageRemotePath = `${REMOTE_PATH.images}/${attach.filename}`;
         const imageUrl = await uploadFileToStorage(
           attach?.path,
           imageRemotePath
@@ -201,7 +200,9 @@ export const createApp = async (req, res) => {
     const result = await app.save();
     await UploadApp.deleteOne({ _id: uploadedAppId });
 
-    res.json(success('App created successfully', result));
+    res
+      .status(201)
+      .json(new ApiResponse('App created successfully', result, 201));
   } catch (e) {
     logger.error(e, 'createApp');
     return handleError(e, res);
@@ -221,16 +222,16 @@ export const uploadApp = async (req, res) => {
     const { file, user } = req;
     let { platform } = req.body;
     if (!Object.values(PLATFORM).includes(platform)) {
-      throw new BadRequestError('Invalid Platform');
+      throw new ApiError('Invalid Platform');
     }
     if (!file?.path) {
-      throw new BadRequestError('No file uploaded');
+      throw new ApiError('No file uploaded');
     }
     localPath = file.path;
-    remotePath = getAppsRemotePath(file.filename);
+    remotePath = `${REMOTE_PATH.apps}/${file.filename}`;
 
     // return res.json(
-    //   success('File uploaded successfully', { _id: '123', isIos })
+    //   new ApiResponse('File uploaded successfully', { _id: '123', isIos })
     // );
 
     // Delete apps from bin for current user
@@ -267,7 +268,7 @@ export const uploadApp = async (req, res) => {
       }
     });
     const result = await uploadedApp.save();
-    res.json(success('File uploaded successfully', result));
+    res.json(new ApiResponse('File uploaded successfully', result));
   } catch (e) {
     logger.error(e, 'uploadApp');
     return handleError(e, res);
@@ -281,14 +282,14 @@ export const deleteApp = async (req, res) => {
     const { appId } = req.params;
     const { _id: userId } = req.user;
     if (!isMongoId(appId)) {
-      throw new BadRequestError('Invalid appId');
+      throw new ApiError('Invalid appId');
     }
     const result = await App.findOneAndDelete({
       _id: appId,
       owner: userId
     }).lean();
     if (!result) {
-      throw new BadRequestError('No App Found');
+      throw new ApiError('No App Found');
     }
     const { icon, video, featureGraphic, images = [], file } = result;
     const imgPaths = images?.map((e) => e.path) ?? [];
@@ -301,7 +302,7 @@ export const deleteApp = async (req, res) => {
     ];
     // eslint-disable-next-line no-unused-vars
     const deletedFiles = await deleteFilesFromStorage(paths);
-    return res.json(success('App deleted successfully', result));
+    return res.json(new ApiResponse('App deleted successfully', result));
   } catch (e) {
     logger.error(e, 'deleteApp');
     return handleError(e, res);

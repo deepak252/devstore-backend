@@ -1,7 +1,7 @@
 import fs from 'fs';
 import ApkReader from 'adbkit-apkreader';
 import ipaExtractInfo from 'ipa-extract-info';
-import { BadRequestError } from './errors.js';
+import { ApiError } from './ApiError.js';
 import Logger from './logger.js';
 
 const logger = new Logger('fileUtil');
@@ -28,8 +28,12 @@ export const removeFiles = (filePaths) => {
 };
 
 export const createDirectoryIfNotExists = (path) => {
-  if (!fs.existsSync(path)) {
-    fs.mkdirSync(path, { recursive: true });
+  try {
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path, { recursive: true });
+    }
+  } catch (e) {
+    logger.error(e, 'createDirectoryIfNotExists');
   }
 };
 
@@ -44,7 +48,7 @@ export const getApkInfo = async (path) => {
     }
   } catch (e) {
     logger.error(e, 'getApkInfo');
-    throw new BadRequestError('Error reading APK file');
+    throw new ApiError('Error reading APK file');
   }
 };
 
@@ -58,6 +62,6 @@ export const getIpaInfo = async (path) => {
     throw { ipaInfo };
   } catch (e) {
     logger.error(e, 'getIpaInfo');
-    throw new BadRequestError('Error reading IPA file');
+    throw new ApiError('Error reading IPA file');
   }
 };
