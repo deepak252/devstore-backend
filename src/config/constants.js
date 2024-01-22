@@ -18,6 +18,13 @@ export const PLATFORM = Object.freeze({
   IOS: 'ios'
 });
 
+export const REMOTE_PATH = Object.freeze({
+  images: 'images',
+  icons: 'icons',
+  videos: 'videos',
+  apps: 'apps'
+});
+
 export const INVALID_USERNAMES = [
   'dev',
   'devstore',

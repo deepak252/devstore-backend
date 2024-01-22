@@ -1,7 +1,8 @@
 import User from '../models/User.js';
-import { getJwtToken, getHashedPassword } from '../utils/authUtil.js';
-import { BadRequestError } from '../utils/errors.js';
-import { failure, success, handleError } from '../utils/responseUtil.js';
+import { getHashedPassword } from '../utils/authUtil.js';
+import { handleError } from '../utils/responseUtil.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { ApiError } from '../utils/ApiError.js';
 import Logger from '../utils/logger.js';
 import { REGEX } from '../config/constants.js';
 
@@ -17,22 +18,32 @@ export const signUp = async (req, res) => {
     });
     let error = user.validateSync();
     if (error) {
-      throw new BadRequestError(error.message);
+      throw new ApiError(error.message);
     }
-    if (password.length < 4) {
-      throw new BadRequestError('Password must contain at least 4 characters');
-    }
-    user.password = await getHashedPassword(password);
     user = await user.save();
-    const token = getJwtToken(user);
-    return res.json(success('Account created successfully', { user, token }));
+    const accessToken = user.getAccessToken();
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(
+          'Account created successfully',
+          { user, accessToken },
+          201
+        )
+      );
   } catch (e) {
     logger.error(e, 'signUp');
     if (e.code === 11000) {
       //duplicate key error, unique value
       return res
-        .status(400)
-        .json(failure('User already exists with given email / username'));
+        .status(409)
+        .json(
+          new ApiResponse(
+            'User already exists with given email / username',
+            undefined,
+            409
+          )
+        );
     }
     return handleError(e, res);
   }
@@ -42,14 +53,16 @@ export const signIn = async (req, res) => {
   try {
     let { usernameOrEmail, password } = req.body;
     if (!usernameOrEmail || !password) {
-      throw new BadRequestError('Username/Email and Password are required');
+      throw new ApiError('Username/Email and Password are required');
     }
     const user = await User.findByUsernameOrEmail(usernameOrEmail);
-    if (!user || !(await user.comparePassword(password))) {
-      throw new BadRequestError('Invalid username/email or password');
+    if (!user || !(await user.isPasswordCorrect(password))) {
+      throw new ApiError('Invalid username/email or password');
     }
-    const token = getJwtToken(user);
-    return res.json(success('Sign in successful', { user, token }));
+    const accessToken = user.getAccessToken();
+    return res.json(
+      new ApiResponse('Sign in successful', { user, accessToken })
+    );
   } catch (e) {
     logger.error(e, 'signIn');
     return handleError(e, res);
@@ -60,24 +73,24 @@ export const resetPassword = async (req, res) => {
   try {
     let { email, newPassword } = req.body;
     if (!email || !newPassword) {
-      throw new BadRequestError('Email and new password are required');
+      throw new ApiError('Email and new password are required');
     }
     email = email.toLowerCase().trim();
     if (!REGEX.EMAIL.test(email)) {
-      throw new BadRequestError('Invalid Email');
+      throw new ApiError('Invalid Email');
     }
     if (newPassword.length < 4) {
-      throw new BadRequestError('Password must contain at least 4 characters');
+      throw new ApiError('Password must contain at least 4 characters');
     }
 
     let user = await User.findOne({ email });
     if (!user) {
-      throw new BadRequestError('User does not exist');
+      throw new ApiError('User does not exist');
     }
     user.password = await getHashedPassword(newPassword);
     user = await user.save();
 
-    return res.json(success('Password reset successful'));
+    return res.json(new ApiResponse('Password reset successful'));
   } catch (e) {
     logger.error(e, 'resetPassword');
     return handleError(e, res);

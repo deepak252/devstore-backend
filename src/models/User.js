@@ -1,11 +1,18 @@
 import mongoose from 'mongoose';
+import bcryptjs from 'bcryptjs';
 import { REGEX, INVALID_USERNAMES } from '../config/constants.js';
-import { comparePassword } from '../utils/authUtil.js';
+import {
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken
+} from '../utils/authUtil.js';
+import { ApiError } from '../utils/ApiError.js';
 
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
+      index: true,
       trim: true,
       unique: true,
       required: [true, 'Username is required'],
@@ -22,7 +29,7 @@ const userSchema = new mongoose.Schema(
         message: 'Invalid username'
       }
     },
-    name: {
+    fullName: {
       type: String,
       trim: true,
       // required: [true, "Name is required"],
@@ -125,7 +132,10 @@ const userSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
       }
-    ]
+    ],
+    refreshToken: {
+      type: String
+    }
   },
   {
     timestamps: true,
@@ -146,8 +156,35 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  if (this.password.length < 4) {
+    throw new ApiError('Password must contain at least 4 characters');
+  }
+  this.password = await bcryptjs.hash(this.password, 10);
+  next();
+});
+
+userSchema.methods.isPasswordCorrect = async function (candidatePassword) {
   return await comparePassword(candidatePassword, this.password);
+};
+
+userSchema.methods.getAccessToken = function () {
+  let token = generateAccessToken({
+    _id: this._id,
+    email: this.email,
+    username: this.username,
+    fullName: this.fullName
+  });
+  return token;
+};
+
+userSchema.methods.getRefreshToken = function () {
+  return generateRefreshToken({
+    _id: this._id
+  });
 };
 
 export default mongoose.model('User', userSchema);

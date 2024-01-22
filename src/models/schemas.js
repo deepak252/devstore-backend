@@ -34,3 +34,22 @@ export const remoteFileSchema = mongoose.Schema(
   },
   { _id: false }
 );
+
+export const linkSchema = mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      trim: true,
+      match: [REGEX.URL, 'Invalid URL']
+    },
+    description: {
+      type: String,
+      required: true
+    }
+  },
+  { _id: false }
+);

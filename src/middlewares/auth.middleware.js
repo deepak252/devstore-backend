@@ -1,6 +1,6 @@
 import User from '../models/User.js';
-import { verifyJwtToken } from '../utils/authUtil.js';
-import { failure } from '../utils/responseUtil.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { verifyAccessToken } from '../utils/authUtil.js';
 import Logger from '../utils/logger.js';
 
 const logger = new Logger('AuthMiddleware');
@@ -14,7 +14,7 @@ export const userAuth = async (req, res, next) => {
     if (!token) {
       throw new Error('token is required');
     }
-    let { user } = verifyJwtToken(token);
+    let { user } = verifyAccessToken(token);
     user = await User.findById(user._id).lean();
     if (!user) {
       throw new Error('User does not exist');
@@ -24,7 +24,9 @@ export const userAuth = async (req, res, next) => {
     next();
   } catch (err) {
     logger.error(err, 'userAuth');
-    return res.status(401).json(failure('Authentication Error'));
+    return res
+      .status(401)
+      .json(new ApiResponse('Authentication Error', undefined, 401));
   }
 };
 
@@ -32,7 +34,7 @@ export const userToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization;
     if (token) {
-      const { user } = verifyJwtToken(token);
+      const { user } = verifyAccessToken(token);
       req.user = await User.findById(user._id).lean();
     }
   } catch (err) {

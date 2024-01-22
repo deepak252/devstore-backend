@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import upload from '../utils/upload.js';
 import {
   getApps,
   getAppById,
@@ -8,6 +7,7 @@ import {
   deleteApp
 } from '../controllers/apps.controller.js';
 import { userAuth, userToken } from '../middlewares/auth.middleware.js';
+import { upload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
 

@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 import { REGEX, PLATFORM } from '../config/constants.js';
-import { apkInfoSchema, ipaInfoSchema, remoteFileSchema } from './schemas.js';
+import {
+  apkInfoSchema,
+  ipaInfoSchema,
+  linkSchema,
+  remoteFileSchema
+} from './schemas.js';
 
 const appSchema = mongoose.Schema(
   {
@@ -45,6 +50,11 @@ const appSchema = mongoose.Schema(
       type: Boolean,
       default: true
     },
+    otherLinks: [
+      {
+        type: linkSchema
+      }
+    ],
     apkInfo: {
       type: apkInfoSchema
     },

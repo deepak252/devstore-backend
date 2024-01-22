@@ -1,8 +1,9 @@
 import App from '../models/App.js';
 import Banner from '../models/Banner.js';
 import { paginateQuery } from '../utils/mongoUtil.js';
-import { BadRequestError } from '../utils/errors.js';
-import { success, handleError } from '../utils/responseUtil.js';
+import { handleError } from '../utils/responseUtil.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import Logger from '../utils/logger.js';
 import { BANNER_CATEGORY } from '../config/constants.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
@@ -33,7 +34,7 @@ export const featuredProjects = async (req, res) => {
       //   pageSize
       // )
     ]);
-    return res.json(success(undefined, { apps, websites, games }));
+    return res.json(new ApiResponse(undefined, { apps, websites, games }));
   } catch (e) {
     logger.error(e, 'featuredProjects');
     return handleError(e, res);
@@ -44,7 +45,7 @@ export const getBanners = async (req, res) => {
   try {
     const { category = BANNER_CATEGORY.HOME } = req.query;
     const result = await Banner.find({ category });
-    return res.json(success(undefined, result));
+    return res.json(new ApiResponse(undefined, result));
   } catch (e) {
     logger.error(e, 'getBanners');
     return handleError(e, res);
@@ -62,10 +63,10 @@ export const createBanner = async (req, res) => {
     });
     const error = banner.validateSync();
     if (error) {
-      throw new BadRequestError(error.message);
+      throw new ApiError(error.message);
     }
     banner = await banner.save();
-    res.json(success('Banner created successfully', banner));
+    res.json(new ApiResponse('Banner created successfully', banner));
   } catch (e) {
     logger.error(e, 'createBanner');
     return handleError(e, res);
