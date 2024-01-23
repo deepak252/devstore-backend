@@ -8,22 +8,26 @@ const logger = new Logger('AuthMiddleware');
 /**
  *  Verify User token
  * */
-export const userAuth = async (req, res, next) => {
+export const verifyJWT = async (req, res, next) => {
   try {
-    const token = req.headers.authorization;
-    if (!token) {
+    const accessToken =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '');
+    if (!accessToken) {
       throw new Error('token is required');
     }
-    let { user } = verifyAccessToken(token);
-    user = await User.findById(user._id).lean();
+    let decodedToken = verifyAccessToken(accessToken);
+    let user = await User.findById(decodedToken?._id)
+      .select('-password -refreshToken')
+      .lean();
     if (!user) {
-      throw new Error('User does not exist');
+      throw new Error('Invalid access token');
     }
     // token verified successfully
     req.user = user;
     next();
   } catch (err) {
-    logger.error(err, 'userAuth');
+    logger.error(err, 'verifyJWT');
     return res
       .status(401)
       .json(new ApiResponse('Authentication Error', undefined, 401));

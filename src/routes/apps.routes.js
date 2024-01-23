@@ -6,7 +6,7 @@ import {
   uploadApp,
   deleteApp
 } from '../controllers/apps.controller.js';
-import { userAuth, userToken } from '../middlewares/auth.middleware.js';
+import { verifyJWT, userToken } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
@@ -15,7 +15,7 @@ router.post('/', userToken, getApps);
 router.get('/:appId', userToken, getAppById);
 router.post(
   '/create',
-  userAuth,
+  verifyJWT,
   upload.fields([
     { name: 'attachmentImages', maxCount: 8 },
     { name: 'attachmentGraphic', maxCount: 1 },
@@ -24,7 +24,7 @@ router.post(
   ]),
   createApp
 );
-router.post('/upload', userAuth, upload.single('attachmentApp'), uploadApp);
-router.delete('/:appId', userAuth, deleteApp);
+router.post('/upload', verifyJWT, upload.single('attachmentApp'), uploadApp);
+router.delete('/:appId', verifyJWT, deleteApp);
 
 export default router;

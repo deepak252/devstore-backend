@@ -13,8 +13,9 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       index: true,
-      trim: true,
       unique: true,
+      trim: true,
+      lowercase: true,
       required: [true, 'Username is required'],
       minLength: [4, 'Username must contain at least 4 characters'],
       maxLength: [20, 'Username should not contain more than 20 characters'],
@@ -34,11 +35,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       // required: [true, "Name is required"],
       maxLength: [30, 'Name should not contain more than 30 characters']
-    },
-    headline: {
-      type: String,
-      trim: true,
-      maxLength: [200, 'Headline should not contain more than 200 characters']
     },
     email: {
       type: String,
@@ -60,6 +56,11 @@ const userSchema = new mongoose.Schema(
       match: [REGEX.PHONE, 'Invalid phone number'],
       unique: true,
       sparse: true //allows multiple documents to have a null or missing phone
+    },
+    headline: {
+      type: String,
+      trim: true,
+      maxLength: [200, 'Headline should not contain more than 200 characters']
     },
     avatarUrl: {
       type: String,
@@ -147,10 +148,13 @@ const userSchema = new mongoose.Schema(
         return this.findOne({ email });
       },
       findByUsernameOrEmail(usernameOrEmail) {
-        if (REGEX.EMAIL.test(usernameOrEmail)) {
-          return this.findByEmail(usernameOrEmail.toLowerCase().trim());
-        }
-        return this.findByUsername(usernameOrEmail);
+        return this.findOne({
+          $or: [{ email: usernameOrEmail }, { username: usernameOrEmail }]
+        });
+        // if (REGEX.EMAIL.test(usernameOrEmail)) {
+        //   return this.findByEmail(usernameOrEmail.toLowerCase().trim());
+        // }
+        // return this.findByUsername(usernameOrEmail);
       }
     }
   }
@@ -172,13 +176,12 @@ userSchema.methods.isPasswordCorrect = async function (candidatePassword) {
 };
 
 userSchema.methods.getAccessToken = function () {
-  let token = generateAccessToken({
+  return generateAccessToken({
     _id: this._id,
     email: this.email,
     username: this.username,
     fullName: this.fullName
   });
-  return token;
 };
 
 userSchema.methods.getRefreshToken = function () {
