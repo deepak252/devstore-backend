@@ -1,11 +1,11 @@
 import App from '../models/App.js';
-import Banner from '../models/Banner.js';
+import Banner from '../models/banner.model.js';
 import { paginateQuery } from '../utils/mongoUtil.js';
 import { handleError } from '../utils/responseUtil.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import Logger from '../utils/logger.js';
-import { BANNER_CATEGORY } from '../config/constants.js';
+import { BANNER_CATEGORY } from '../constants.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
 
 const logger = new Logger('FeaturedController');

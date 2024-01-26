@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { REGEX } from '../config/constants.js';
+import { Schema } from 'mongoose';
+import { REGEX } from '../constants.js';
 
-export const apkInfoSchema = mongoose.Schema(
+export const apkInfoSchema = new Schema(
   {
     version: String, //versionName
     package: String, //package
@@ -11,7 +11,7 @@ export const apkInfoSchema = mongoose.Schema(
   { _id: false }
 );
 
-export const ipaInfoSchema = mongoose.Schema(
+export const ipaInfoSchema = new Schema(
   {
     version: String, //CFBundleShortVersionString
     identifier: String, //CFBundleIdentifier
@@ -20,7 +20,7 @@ export const ipaInfoSchema = mongoose.Schema(
   { _id: false }
 );
 
-export const remoteFileSchema = mongoose.Schema(
+export const remoteFileSchema = new Schema(
   {
     url: {
       type: String,
@@ -35,7 +35,7 @@ export const remoteFileSchema = mongoose.Schema(
   { _id: false }
 );
 
-export const linkSchema = mongoose.Schema(
+export const linkSchema = new Schema(
   {
     name: {
       type: String,

@@ -1,6 +1,6 @@
-import User from '../models/User.js';
+import User from '../models/user.model.js';
 import App from '../models/App.js';
-import { INVALID_USERNAMES } from '../config/constants.js';
+import { INVALID_USERNAMES } from '../constants.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';

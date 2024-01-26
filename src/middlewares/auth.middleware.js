@@ -1,4 +1,4 @@
-import User from '../models/User.js';
+import User from '../models/user.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { verifyAccessToken } from '../utils/authUtil.js';
 import Logger from '../utils/logger.js';

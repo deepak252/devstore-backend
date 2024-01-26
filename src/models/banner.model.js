@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { REGEX, BANNER_CATEGORY } from '../config/constants.js';
+import { Schema, model } from 'mongoose';
+import { REGEX, BANNER_CATEGORY } from '../constants.js';
 
-const bannerSchema = mongoose.Schema(
+const bannerSchema = new Schema(
   {
     image: {
       type: String,
@@ -22,4 +22,4 @@ const bannerSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model('Banner', bannerSchema);
+export default model('Banner', bannerSchema);

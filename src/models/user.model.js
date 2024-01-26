@@ -1,14 +1,15 @@
-import mongoose from 'mongoose';
+import { Schema, model } from 'mongoose';
 import bcryptjs from 'bcryptjs';
-import { REGEX, INVALID_USERNAMES } from '../config/constants.js';
+import { REGEX, INVALID_USERNAMES } from '../constants.js';
 import {
   comparePassword,
   generateAccessToken,
   generateRefreshToken
 } from '../utils/authUtil.js';
 import { ApiError } from '../utils/ApiError.js';
+import { remoteFileSchema } from './schemas.js';
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema(
   {
     username: {
       type: String,
@@ -62,14 +63,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxLength: [200, 'Headline should not contain more than 200 characters']
     },
-    avatarUrl: {
-      type: String,
-      trim: true,
-      match: [REGEX.URL, 'Invalid avatar URL']
-    },
     bio: {
       type: String,
       maxLength: [1000, 'Headline should not contain more than 1000 characters']
+    },
+    avatar: {
+      type: remoteFileSchema
     },
     githubUrl: {
       type: String,
@@ -86,54 +85,36 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [REGEX.URL, 'Invalid Twitter URL']
     },
-    apps: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App'
-      }
-    ],
-    websites: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Website'
-      }
-    ],
-    games: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game'
-      }
-    ],
-    favoriteApps: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App'
-      }
-    ],
-    favoriteWebsites: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Website'
-      }
-    ],
-    favoriteGames: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game'
-      }
-    ],
-    followers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      }
-    ],
-    following: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      }
-    ],
+    // favoriteApps: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'App'
+    //   }
+    // ],
+    // favoriteWebsites: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'Website'
+    //   }
+    // ],
+    // favoriteGames: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'Game'
+    //   }
+    // ],
+    // followers: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'User'
+    //   }
+    // ],
+    // following: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'User'
+    //   }
+    // ],
     refreshToken: {
       type: String
     }
@@ -190,4 +171,4 @@ userSchema.methods.getRefreshToken = function () {
   });
 };
 
-export default mongoose.model('User', userSchema);
+export default model('User', userSchema);

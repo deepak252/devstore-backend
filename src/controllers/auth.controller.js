@@ -1,10 +1,10 @@
-import User from '../models/User.js';
+import User from '../models/user.model.js';
 import { getHashedPassword, verifyRefreshToken } from '../utils/authUtil.js';
 import { handleError } from '../utils/responseUtil.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import Logger from '../utils/logger.js';
-import { REGEX } from '../config/constants.js';
+import { REGEX } from '../constants.js';
 
 const logger = new Logger('AuthController');
 

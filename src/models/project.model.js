@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import { REGEX, PLATFORM } from '../constants.js';
+import { Schema, model } from 'mongoose';
+import { REGEX, PLATFORM, PROJECT_TYPE } from '../constants.js';
 import {
   apkInfoSchema,
   ipaInfoSchema,
@@ -7,8 +7,13 @@ import {
   remoteFileSchema
 } from './schemas.js';
 
-const appSchema = mongoose.Schema(
+const projectSchema = new Schema(
   {
+    projectType: {
+      type: String,
+      enum: PROJECT_TYPE,
+      default: PROJECT_TYPE.APP
+    },
     name: {
       type: String,
       required: [true, 'App name is required']
@@ -20,20 +25,14 @@ const appSchema = mongoose.Schema(
     images: [remoteFileSchema],
     video: remoteFileSchema,
     featureGraphic: remoteFileSchema,
-    file: remoteFileSchema,
     categories: [
       {
         type: String,
         trim: true
       }
     ],
-    platform: {
-      type: String,
-      enum: PLATFORM,
-      default: PLATFORM.ANDROID
-    },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Owner Id is required']
     },
@@ -51,36 +50,51 @@ const appSchema = mongoose.Schema(
         type: linkSchema
       }
     ],
+    isPrivate: {
+      type: Boolean,
+      default: false
+    },
+    /**  Website */
+    websiteLink: {
+      type: String,
+      trim: true,
+      match: [REGEX.URL, 'Invalid website URL']
+    },
+    /**  Apps and Games */
+    appFile: remoteFileSchema,
+    platform: {
+      type: String,
+      enum: PLATFORM,
+      default: PLATFORM.ANDROID
+    },
     apkInfo: {
       type: apkInfoSchema
     },
     ipaInfo: {
       type: ipaInfoSchema
     },
-    isPrivate: {
-      type: Boolean,
-      default: false
-    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
+    /*****/
+
     // comments: [
     //   {
-    //     type: mongoose.Schema.Types.ObjectId,
+    //     type: Schema.Types.ObjectId,
     //     ref: 'User',
     //   },
     // ],
     // likes: [
     //   {
-    //     type: mongoose.Schema.Types.ObjectId,
+    //     type: Schema.Types.ObjectId,
     //     ref: 'User'
     //   }
     // ],
-    lastUpdated: {
-      type: Date,
-      default: Date.now
-    }
   },
   {
     timestamps: true
   }
 );
 
-export default mongoose.model('App', appSchema);
+export default model('Project', projectSchema);

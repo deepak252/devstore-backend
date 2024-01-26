@@ -1,4 +1,4 @@
-import Metadata from '../models/Metadata.js';
+import Metadata from '../models/metadata.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { isMongoId } from '../utils/mongoUtil.js';

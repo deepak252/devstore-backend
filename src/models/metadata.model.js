@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import { Schema, model } from 'mongoose';
 
-const metadataSchema = mongoose.Schema(
+const metadataSchema = new Schema(
   {
     appCategories: [
       {
@@ -30,4 +30,4 @@ const metadataSchema = mongoose.Schema(
   }
 );
 
-export default mongoose.model('Metadata', metadataSchema);
+export default model('Metadata', metadataSchema);

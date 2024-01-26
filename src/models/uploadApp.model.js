@@ -1,11 +1,11 @@
-import mongoose from 'mongoose';
-import { PLATFORM } from '../config/constants.js';
+import { Schema, model } from 'mongoose';
+import { PLATFORM } from '../constants.js';
 import { apkInfoSchema, ipaInfoSchema, remoteFileSchema } from './schemas.js';
 
-const uploadAppSchema = mongoose.Schema(
+const uploadAppSchema = new Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User Id is required']
     },
@@ -38,4 +38,4 @@ const uploadAppSchema = mongoose.Schema(
   }
 );
 
-export default mongoose.model('UploadApp', uploadAppSchema);
+export default model('UploadApp', uploadAppSchema);

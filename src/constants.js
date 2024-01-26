@@ -13,6 +13,12 @@ export const BANNER_CATEGORY = Object.freeze({
   HOME: 'home'
 });
 
+export const PROJECT_TYPE = Object.freeze({
+  APP: 'app',
+  GAME: 'game',
+  WEBSITE: 'website'
+});
+
 export const PLATFORM = Object.freeze({
   ANDROID: 'android',
   IOS: 'ios'

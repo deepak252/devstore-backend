@@ -1,4 +1,4 @@
-import UploadApp from '../models/UploadApp.js';
+import UploadApp from '../models/uploadApp.model.js';
 import Logger from '../utils/logger.js';
 import { deleteFilesFromStorage } from './firebaseStorage.js';
 

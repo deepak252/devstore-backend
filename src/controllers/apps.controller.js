@@ -1,5 +1,5 @@
 import App from '../models/App.js';
-import UploadApp from '../models/UploadApp.js';
+import UploadApp from '../models/uploadApp.model.js';
 import { deleteUserUploadedAppsFromBin } from '../helper/appsHelper.js';
 import {
   uploadFileToStorage,
@@ -18,7 +18,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import Logger from '../utils/logger.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
-import { PLATFORM, REMOTE_PATH } from '../config/constants.js';
+import { PLATFORM, REMOTE_PATH } from '../constants.js';
 
 const logger = new Logger('AppsController');
 
