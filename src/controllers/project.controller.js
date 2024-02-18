@@ -1,6 +1,7 @@
-import App from '../models/App.js';
-import UploadApp from '../models/uploadApp.model.js';
-import { deleteUserUploadedAppsFromBin } from '../helper/appsHelper.js';
+/* eslint-disable */
+import Project from '../models/project.model.js';
+import AppPackage from '../models/appPackage.model.js';
+import { deleteAppPackages } from '../helper/appsHelper.js';
 import {
   uploadFileToStorage,
   deleteFilesFromStorage
@@ -12,61 +13,92 @@ import {
   removeFiles
 } from '../utils/fileUtil.js';
 import { jsonTryParse } from '../utils/misc.js';
-import { paginateQuery, isMongoId } from '../utils/mongoUtil.js';
+import { isMongoId } from '../utils/mongoUtil.js';
 import { handleError } from '../utils/responseUtil.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import Logger from '../utils/logger.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
-import { PLATFORM, REMOTE_PATH } from '../constants.js';
+import { PLATFORM, PROJECT_TYPE, REMOTE_PATH } from '../constants.js';
 
-const logger = new Logger('AppsController');
+const logger = new Logger('ProjectsController');
 
-export const getApps = async (req, res) => {
+export const getProjects = async (req, res) => {
   try {
-    const { pageSize = 10, pageNumber = 1, searchQuery = '' } = req.query;
+    let { limit, page, search = '' } = req.query;
+    const projectType = req.projectType; // apps, websites, games
     // eslint-disable-next-line no-unused-vars
     let { platform, categories } = req.body;
-    let reqFilter = {};
-    if (Object.values(PLATFORM).includes(platform)) {
-      reqFilter = { platform };
+    // let reqFilter = {};
+    // if (Object.values(PLATFORM).includes(platform)) {
+    //   reqFilter = { platform };
+    // }
+    if (isNaN(page) || isNaN(limit)) {
+      page = 1;
+      limit = 10;
+    } else {
+      page = Number(page);
+      limit = Number(limit);
     }
-    let filter = {
-      $and: [
-        reqFilter,
-        { $or: [{ isPrivate: false }, { owner: req?.user?._id }] },
-        { name: { $regex: searchQuery.trim(), $options: 'i' } }
-      ]
-    };
-    const apps = await paginateQuery(
-      App.find(filter).select(SELECTED_FIELDS),
-      pageNumber,
-      pageSize
+    page = Math.floor(Math.max(1, page));
+    limit = Math.floor(Math.max(1, limit));
+    const { resultsPipeline, totalResultsPipeline } = projectListPipeline({
+      projectType,
+      search,
+      page,
+      limit
+    });
+    const [projects, totalResults] = await Promise.all([
+      Project.aggregate(resultsPipeline()).exec(),
+      Project.aggregate(totalResultsPipeline()).exec()
+    ]);
+    const totalPages = Math.ceil(
+      (totalResults[0]?.totalResults ?? 0) / limit
     );
-    const totalResults = await App.countDocuments(filter);
 
     res.json(
-      new ApiResponse(undefined, { apps, pageNumber, pageSize, totalResults })
+      new ApiResponse(undefined, { projects, page, limit, totalPages })
     );
+
+    // let filter = {
+    //   $and: [
+    //     reqFilter,
+    //     { $or: [{ isPrivate: false }, { owner: req?.user?._id }] },
+    //     { name: { $regex: search.trim(), $options: 'i' } }
+    //   ]
+    // };
+    // const apps = await paginateQuery(
+    //   Project.find(filter).select(SELECTED_FIELDS),
+    //   page,
+    //   limit
+    // );
+    // const totalResults = await Project.countDocuments(filter);
+
+    // res.json(
+    //   new ApiResponse(undefined, { apps, page, limit, totalResults })
+    // );
   } catch (e) {
-    logger.error(e, 'getApps');
+    logger.error(e, 'getProjects');
     return handleError(e, res);
   }
 };
 
-export const getAppById = async (req, res) => {
+export const getProjectById = async (req, res) => {
   try {
-    const { appId } = req.params;
-    if (!isMongoId(appId)) {
-      throw new ApiError('Invalid app ID');
+    const { projectId } = req.params;
+    const projectType = req.projectType; // apps, websites, games
+    if (!isMongoId(projectId)) {
+      throw new ApiError('Invalid project ID');
     }
-    let result = await App.findById(appId).populate(POPULATE_OWNER).lean();
+    let result = await Project.findOne({_id: projectId, projectType })
+      .populate(POPULATE_OWNER)
+      .lean();
     if (!result) {
-      throw new ApiError('App not found');
+      throw new ApiError('Not found');
     }
     if (!result.owner?._id?.equals(req.user?._id)) {
       if (result.isPrivate) {
-        throw new ApiError('App not found');
+        throw new ApiError('Not found');
       }
       if (!result.isSourceCodePublic) {
         delete result.sourceCode;
@@ -74,12 +106,12 @@ export const getAppById = async (req, res) => {
     }
     return res.json(new ApiResponse(undefined, result));
   } catch (e) {
-    logger.error(e, 'getAppById');
+    logger.error(e, 'getProjectById');
     return handleError(e, res);
   }
 };
 
-export const createApp = async (req, res) => {
+export const createProject = async (req, res) => {
   let iconLocalPath, videoLocalPath, imagesLocalPaths, graphicLocalpath;
   let iconRemotePath,
     videoRemotePath,
@@ -89,6 +121,7 @@ export const createApp = async (req, res) => {
     const {
       body: { data } = {},
       user: { _id: userId } = {},
+      projectType,
       files: {
         attachmentIcon: [attachmentIcon] = [],
         attachmentVideo: [attachmentVideo] = [],
@@ -104,11 +137,12 @@ export const createApp = async (req, res) => {
       sourceCode,
       isSourceCodePublic,
       isPrivate,
-      uploadedAppId,
+      packageId,
       otherLinks
     } = jsonTryParse(data);
 
-    let app = new App({
+    let project = new Project({
+      projectType,
       name,
       description,
       categories,
@@ -119,18 +153,22 @@ export const createApp = async (req, res) => {
       otherLinks
     });
 
-    let error = app.validateSync();
+    let error = project.validateSync();
     if (error) {
       throw new ApiError(error.message);
     }
-    const uploadedApp = await UploadApp.findOne({
-      _id: uploadedAppId,
-      user: userId
-    }).lean();
-    if (!uploadedApp) {
-      throw new ApiError('Application file not found. Please try again');
+    let appPackage = {};
+    if([PROJECT_TYPE.APPS, PROJECT_TYPE.GAMES].includes(projectType)){
+      appPackage = await AppPackage.findOne({
+        _id: packageId,
+        owner: userId
+      }).lean();
+      if (!appPackage) {
+        throw new ApiError('Application package not found. Please try again');
+      }
     }
-    const { file, apkInfo, ipaInfo, platform } = uploadedApp;
+    
+    const { packageFile, apkInfo, ipaInfo, platform } = appPackage;
 
     iconLocalPath = attachmentIcon?.path;
     videoLocalPath = attachmentVideo?.path;
@@ -187,8 +225,8 @@ export const createApp = async (req, res) => {
         imagesRemotePaths.push(imageRemotePath);
       }
     }
-    app.set({
-      file,
+    project.set({
+      packageFile,
       apkInfo,
       ipaInfo,
       platform,
@@ -197,32 +235,42 @@ export const createApp = async (req, res) => {
       video,
       featureGraphic
     });
-    const result = await app.save();
-    await UploadApp.deleteOne({ _id: uploadedAppId });
-
+    const result = await project.save();
+    if(packageId){
+      await AppPackage.deleteOne({ _id: packageId });
+    }
     res
       .status(201)
-      .json(new ApiResponse('App created successfully', result, 201));
+      .json(new ApiResponse('Project created successfully', result, 201));
   } catch (e) {
-    logger.error(e, 'createApp');
+    logger.error(e, 'createProject');
+    const deletedFiles = await deleteFilesFromStorage([
+      iconRemotePath,
+      videoRemotePath,
+      graphicRemotePath,
+      ...(imagesRemotePaths ?? [])
+    ]);
     return handleError(e, res);
   } finally {
     removeFiles([
       iconLocalPath,
-      ...(imagesLocalPaths ?? []),
       videoLocalPath,
-      graphicLocalpath
+      graphicLocalpath,
+      ...(imagesLocalPaths ?? [])
     ]);
   }
 };
 
-export const uploadApp = async (req, res) => {
+export const uploadPackage = async (req, res) => {
   let localPath, remotePath;
   try {
     const { file, user } = req;
-    let { platform } = req.body;
+    let { platform, projectType } = req.body;
     if (!Object.values(PLATFORM).includes(platform)) {
       throw new ApiError('Invalid Platform');
+    }
+    if (!Object.values(PROJECT_TYPE).includes(projectType)) {
+      throw new ApiError('Package must be app or game');
     }
     if (!file?.path) {
       throw new ApiError('No file uploaded');
@@ -235,7 +283,7 @@ export const uploadApp = async (req, res) => {
     // );
 
     // Delete apps from bin for current user
-    await deleteUserUploadedAppsFromBin(user._id);
+    await deleteAppPackages(user._id);
 
     let apkInfo, ipaInfo;
     if (platform === PLATFORM.IOS) {
@@ -257,54 +305,123 @@ export const uploadApp = async (req, res) => {
     if (typeof downloadUrl !== 'string') {
       throw downloadUrl;
     }
-    const uploadedApp = new UploadApp({
-      user: user._id,
+    const appPackage = new AppPackage({
+      owner: user._id,
+      projectType,
       platform,
       apkInfo,
       ipaInfo,
-      file: {
+      packageFile: {
         url: downloadUrl,
         path: remotePath
       }
     });
-    const result = await uploadedApp.save();
+    const result = await appPackage.save();
     res.json(new ApiResponse('File uploaded successfully', result));
   } catch (e) {
-    logger.error(e, 'uploadApp');
+    logger.error(e, 'uploadPackage');
     return handleError(e, res);
   } finally {
     localPath && removeFile(localPath);
   }
 };
 
-export const deleteApp = async (req, res) => {
+export const deleteProject = async (req, res) => {
   try {
-    const { appId } = req.params;
+    const { projectId } = req.params;
     const { _id: userId } = req.user;
-    if (!isMongoId(appId)) {
-      throw new ApiError('Invalid appId');
+    if (!isMongoId(projectId)) {
+      throw new ApiError('Invalid projectId');
     }
-    const result = await App.findOneAndDelete({
-      _id: appId,
+    const result = await Project.findOneAndDelete({
+      _id: projectId,
       owner: userId
     }).lean();
     if (!result) {
-      throw new ApiError('No App Found');
+      throw new ApiError('No Project Found');
     }
-    const { icon, video, featureGraphic, images = [], file } = result;
+    const { icon, video, featureGraphic, images = [], packageFile } = result;
     const imgPaths = images?.map((e) => e.path) ?? [];
     const paths = [
       icon?.path,
       video?.path,
       featureGraphic?.path,
-      file?.path,
+      packageFile?.path,
       ...imgPaths
     ];
     // eslint-disable-next-line no-unused-vars
     const deletedFiles = await deleteFilesFromStorage(paths);
-    return res.json(new ApiResponse('App deleted successfully', result));
+    return res.json(new ApiResponse('Project deleted successfully', result));
   } catch (e) {
-    logger.error(e, 'deleteApp');
+    logger.error(e, 'deleteProject');
     return handleError(e, res);
   }
+};
+
+
+const projectListPipeline = ({
+  projectType = 'apps',
+  page = 1,
+  limit = 10,
+  search = ''
+}) => {
+  const stages = [
+    {
+      $match: {
+        projectType,
+        isPrivate: false,
+        name: { $regex: new RegExp(search, 'i') }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'owner',
+        foreignField: '_id',
+        as: 'owner'
+      }
+    },
+    {
+      $addFields: {
+        packageFile: '$packageFile.url',
+        icon: '$icon.url',
+        featureGraphic: '$featureGraphic.url',
+        owner: {
+          $arrayElemAt: ['$owner', 0]
+        }
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        description: 1,
+        icon: 1,
+        categories: 1,
+        platform: 1,
+        owner: {
+          _id: 1,
+          username: 1,
+          fullName: 1,
+          avatarUrl: 1
+        }
+      }
+    }
+  ];
+  return {
+    totalResultsPipeline: () => [
+      ...stages,
+      {
+        $count: 'totalResults'
+      }
+    ],
+    resultsPipeline: () => [
+      ...stages,
+      {
+        $skip: (page - 1) * limit
+      },
+      {
+        $limit: limit
+      }
+    ]
+  };
 };

@@ -11,8 +11,7 @@ const projectSchema = new Schema(
   {
     projectType: {
       type: String,
-      enum: PROJECT_TYPE,
-      default: PROJECT_TYPE.APP
+      enum: PROJECT_TYPE
     },
     name: {
       type: String,
@@ -61,7 +60,7 @@ const projectSchema = new Schema(
       match: [REGEX.URL, 'Invalid website URL']
     },
     /**  Apps and Games */
-    appFile: remoteFileSchema,
+    packageFile: remoteFileSchema,
     platform: {
       type: String,
       enum: PLATFORM,

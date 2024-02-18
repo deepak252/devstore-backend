@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { delay } from '../middlewares/delay.middleware.js';
-import appsRouter from './apps.routes.js';
+import projectRouter from './project.routes.js';
 import userRouter from './user.routes.js';
 import authRouter from './auth.routes.js';
 import featuredRouter from './featured.routes.js';
@@ -13,7 +13,7 @@ router.use(delay);
 router.use('/auth', authRouter);
 router.use('/user', userRouter);
 router.use('/metadata', metadataRouter);
-router.use('/apps', appsRouter);
+router.use('/project', projectRouter);
 router.use('/featured', featuredRouter);
 
 export default router;

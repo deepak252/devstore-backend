@@ -7,7 +7,7 @@ import {
   CLIENT_EMAIL,
   CLIENT_ID,
   CLIENT_X509_CERT_URL
-} from './enironment.js';
+} from './environment.js';
 
 let serviceAccount = {
   type: 'service_account',

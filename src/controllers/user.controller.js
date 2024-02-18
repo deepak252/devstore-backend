@@ -1,5 +1,5 @@
 import User from '../models/user.model.js';
-import App from '../models/App.js';
+import Project from '../models/project.model.js';
 import { INVALID_USERNAMES } from '../constants.js';
 import { SELECTED_FIELDS, POPULATE_OWNER } from '../config/queryFilters.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -54,10 +54,10 @@ export const getUserByUsername = async (req, res) => {
       filter = { isPrivate: false };
     }
     let selectedFields = SELECTED_FIELDS + '  featureGraphic';
-    let apps = await App.find(filter)
+    let projects = await Project.find(filter)
       .populate(POPULATE_OWNER)
       .select(selectedFields);
-    result.apps = apps;
+    result.projects = projects;
     return res.json(new ApiResponse(undefined, result));
   } catch (e) {
     logger.error(e, 'getUserByUsername');

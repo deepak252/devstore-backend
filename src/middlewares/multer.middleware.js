@@ -16,8 +16,8 @@ const getFileName = (user, file) => {
   if (user?.username) {
     filename = `${user.username}_${filename}`;
   }
-  if (file.fieldname === 'attachmentApp') {
-    filename = `${filename}_app`;
+  if (file.fieldname === 'attachmentPackage') {
+    filename = `${filename}_package`;
   } else if (ext) {
     filename = `${filename}.${ext}`;
   }

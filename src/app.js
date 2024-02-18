@@ -6,7 +6,12 @@ import { ApiResponse } from './utils/ApiResponse.js';
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin: 'http://localhost:3000'
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 app.get('/', (req, res) => res.json(new ApiResponse('Welcome to Dev Store')));

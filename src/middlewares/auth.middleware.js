@@ -6,7 +6,7 @@ import Logger from '../utils/logger.js';
 const logger = new Logger('AuthMiddleware');
 
 /**
- *  Verify User token
+ *  Verify accessToken (mandatory)
  * */
 export const verifyJWT = async (req, res, next) => {
   try {
@@ -16,8 +16,8 @@ export const verifyJWT = async (req, res, next) => {
     if (!accessToken) {
       throw new Error('token is required');
     }
-    let decodedToken = verifyAccessToken(accessToken);
-    let user = await User.findById(decodedToken?._id)
+    const decodedToken = verifyAccessToken(accessToken);
+    const user = await User.findById(decodedToken?._id)
       .select('-password -refreshToken')
       .lean();
     if (!user) {
@@ -34,15 +34,25 @@ export const verifyJWT = async (req, res, next) => {
   }
 };
 
-export const userToken = async (req, res, next) => {
+/**
+ *  Verify accessToken (not mandatory)
+ * */
+export const checkUser = async (req, _, next) => {
   try {
-    const token = req.headers.authorization;
-    if (token) {
-      const { user } = verifyAccessToken(token);
-      req.user = await User.findById(user._id).lean();
+    const accessToken =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '');
+    if (accessToken) {
+      const decodedToken = verifyAccessToken(accessToken);
+      let user = await User.findById(decodedToken?._id)
+        .select('-password -refreshToken')
+        .lean();
+      if (user) {
+        req.user = user;
+      }
     }
   } catch (err) {
-    logger.error(err, 'userToken');
+    logger.error(err, 'checkUser');
   }
   next();
 };

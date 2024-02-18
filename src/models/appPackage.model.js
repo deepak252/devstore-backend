@@ -1,22 +1,26 @@
 import { Schema, model } from 'mongoose';
-import { PLATFORM } from '../constants.js';
+import { PLATFORM, PROJECT_TYPE } from '../constants.js';
 import { apkInfoSchema, ipaInfoSchema, remoteFileSchema } from './schemas.js';
 
-const uploadAppSchema = new Schema(
+const appPackageSchema = new Schema(
   {
-    user: {
+    owner: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User Id is required']
+    },
+    projectType: {
+      type: String,
+      enum: PROJECT_TYPE
     },
     platform: {
       type: String,
       enum: PLATFORM,
       default: PLATFORM.ANDROID
     },
-    file: {
+    packageFile: {
       type: remoteFileSchema,
-      required: [true, 'File is required']
+      required: [true, 'packageFile is required']
     },
     apkInfo: {
       type: apkInfoSchema
@@ -29,13 +33,13 @@ const uploadAppSchema = new Schema(
     timestamps: true,
     statics: {
       deleteAllByUserId(userId) {
-        return this.deleteMany({ user: userId });
+        return this.deleteMany({ owner: userId });
       },
       findAllByUserId(userId) {
-        return this.find({ user: userId });
+        return this.find({ owner: userId });
       }
     }
   }
 );
 
-export default model('UploadApp', uploadAppSchema);
+export default model('AppPackage', appPackageSchema);

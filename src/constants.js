@@ -14,9 +14,9 @@ export const BANNER_CATEGORY = Object.freeze({
 });
 
 export const PROJECT_TYPE = Object.freeze({
-  APP: 'app',
-  GAME: 'game',
-  WEBSITE: 'website'
+  APPS: 'apps',
+  GAMES: 'games',
+  WEBSITES: 'websites'
 });
 
 export const PLATFORM = Object.freeze({
@@ -84,5 +84,7 @@ export const INVALID_USERNAMES = [
   'join',
   'form',
   'main',
-  'pricing'
+  'pricing',
+  'project',
+  'projects'
 ];

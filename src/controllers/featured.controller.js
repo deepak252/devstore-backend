@@ -1,4 +1,4 @@
-import App from '../models/App.js';
+import Project from '../models/project.model.js';
 import Banner from '../models/banner.model.js';
 import { paginateQuery } from '../utils/mongoUtil.js';
 import { handleError } from '../utils/responseUtil.js';
@@ -19,7 +19,7 @@ export const featuredProjects = async (req, res) => {
     let selectedFields = SELECTED_FIELDS + '  featureGraphic';
     const [apps, websites, games] = await Promise.all([
       paginateQuery(
-        App.find(filter).populate(POPULATE_OWNER).select(selectedFields),
+        Project.find(filter).populate(POPULATE_OWNER).select(selectedFields),
         pageNumber,
         pageSize
       )
